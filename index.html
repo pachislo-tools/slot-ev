@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>期待値・続行パターン統合ツール</title>
+<style>
+  :root{
+    --bg:#f6f7f9;
+    --card:#fff;
+    --text:#111;
+    --muted:#555;
+    --line:#ddd;
+    --shadow:0 2px 6px rgba(0,0,0,.08);
+    --radius:12px;
+  }
+  body{
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,"Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    margin:0;
+    padding:16px;
+  }
+  h1{font-size:18px;margin:0 0 12px}
+  h2{font-size:18px;margin:0 0 10px}
+  .card{
+    background:var(--card);
+    padding:14px;
+    border-radius:var(--radius);
+    margin-bottom:12px;
+    box-shadow:var(--shadow);
+  }
+  .row{
+    display:flex;
+    gap:12px;
+    flex-wrap:wrap;
+    align-items:flex-end;
+    margin-bottom:10px;
+  }
+  label{font-size:12.5px;color:var(--text)}
+  .hint{font-size:12px;color:var(--muted);line-height:1.45;margin-top:6px}
+  .warn{color:#e6a100}
+  .danger{color:#c00}
+  input,select,button{
+    font-size:14px;
+    padding:8px 10px;
+    border:1px solid #cfcfcf;
+    border-radius:10px;
+    background:#fff;
+  }
+  input,select{min-width:160px}
+  button{
+    cursor:pointer;
+    border:1px solid #bbb;
+    background:#fafafa;
+  }
+  button:active{transform:translateY(1px)}
+  .big{font-size:18px;font-weight:800}
+  .kpi{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    margin-top:6px;
+  }
+  .kpi .line{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    align-items:baseline;
+    font-size:14px;
+  }
+  .kpi .label{color:var(--muted)}
+  .pill{
+    display:inline-block;
+    padding:2px 8px;
+    border-radius:999px;
+    font-size:12px;
+    background:#f0f2f5;
+    color:#333;
+  }
+  .tableWrap{
+    overflow:auto;
+    -webkit-overflow-scrolling:touch;
+    border:1px solid #eee;
+    border-radius:12px;
+    margin-top:10px;
+  }
+  table{
+    width:100%;
+    border-collapse:separate;
+    border-spacing:0;
+    min-width:920px; /* スマホは横スクロール */
+    background:#fff;
+  }
+  th,td{
+    border-bottom:1px solid var(--line);
+    padding:8px;
+    font-size:13px;
+    text-align:center;
+    vertical-align:middle;
+    white-space:nowrap;
+  }
+  thead th{
+    position:sticky;
+    top:0;
+    background:#fff;
+    z-index:1;
+  }
+  tbody tr:last-child td{border-bottom:none}
+  td input{min-width:120px;width:120px}
+  .col-wide input{min-width:160px;width:160px}
+
+  /* モバイル最適化 */
+  @media (max-width: 720px){
+    body{padding:12px}
+    h2{font-size:17px}
+    input,select{min-width:unset;width:100%}
+    .row{gap:10px}
+    .row > label{flex:1 1 240px}
+    button{width:100%}
+    table{min-width:860px}
+  }
+</style>
+</head>
+
+<body>
+<h1>期待値＋続行パターン計算ツール</h1>
+
+<!-- 設定 -->
+<div class="card">
+  <div class="row">
+    <label>モード<br>
+      <select id="mode">
+        <option value="equal">等価</option>
+        <option value="nonequal">非等価</option>
+      </select>
+    </label>
+
+    <label>当該 回すGの算出<br>
+      <select id="spinMode">
+        <option value="hit">初当たり(1/x)（G=1/x）</option>
+        <option value="machine">EV＋機械割（逆算）</option>
+        <option value="manual">手動G</option>
+      </select>
+    </label>
+
+    <span class="pill">スマホ：表は横スクロール</span>
+  </div>
+
+  <div class="hint">
+    ※平均消化Gは「回すG」＋「TY/純増で増えるG」で計算します。<br>
+    ※TY/純増の入力欄は「初当たり(1/x)で回すGを作る」時だけ表示します（他方式では不要）。
+  </div>
+</div>
+
+<!-- 当該入力 -->
+<div class="card">
+  <h2>当該入力</h2>
+  <div class="hint" id="eqHint" style="display:none">
+    ※非等価モードでもEV/機械割は <b>等価ベース</b> の数値を入力してください
+  </div>
+
+  <div class="row">
+    <label>期待値EV(円)<br><input id="evNow" type="number" value="982"></label>
+    <label>機械割(%)<br><input id="machineNow" type="number" step="0.01" value="102.7"></label>
+
+    <label id="hitNowWrap">初当たり(1/x)<br><input id="hitNow" type="number" step="0.1" value="492"></label>
+    <label id="manualNowWrap" style="display:none">手動G（回すG）<br><input id="spinNowManual" type="number" step="1" value="492"></label>
+  </div>
+
+  <div class="row" id="tyAreaNow">
+    <label>当該TY(枚)<br><input id="tyNow" type="number" step="1" value="0"></label>
+    <label>純増(枚/G)<br><input id="incNow" type="number" step="0.01" value="0"></label>
+    <div class="hint">例：TY1200枚、純増2.5 → 1200÷2.5＝480G（追加G）</div>
+  </div>
+</div>
+
+<!-- 非等価条件 -->
+<div class="card" id="noneqArea" style="display:none">
+  <h2>非等価条件</h2>
+  <div class="hint">
+    ※非等価は <b>差枚×換金単価 ＋ 現金投資×(換金単価−購入単価)</b><br>
+    ※続行は「当該の余剰メダル＋当該TY」を持ち越して計算（現金オンリーで安くならない）
+  </div>
+
+  <div class="row">
+    <label>貸出(枚/1000円)<br><input id="lend" type="number" value="50"></label>
+    <label>交換率(枚/100円)<br><input id="rate" type="number" step="0.1" value="5.6"></label>
+    <label>1k回転数<br><input id="rot1k" type="number" step="0.1" value="33.5"></label>
+    <label>持ちメダル枚数<br><input id="hold" type="number" value="500"></label>
+  </div>
+  <div id="gapView" class="hint"></div>
+</div>
+
+<!-- 続行 -->
+<div class="card">
+  <h2>続行パターン</h2>
+  <div class="hint">
+    ※「初当たり(1/x)」が未入力の続行行は、保険としてEV＋機械割（逆算）で回すGを推定します。<br>
+    （ただし推定なので <span class="warn">Gがブレやすい</span> ため、基本は初当たり(1/x)入力推奨）
+  </div>
+
+  <button onclick="addRow()">＋ 続行追加</button>
+
+  <div class="tableWrap">
+    <table>
+      <thead>
+        <tr>
+          <th>初当たり(1/x)</th>
+          <th>確率(%)</th>
+          <th>EV(円)</th>
+          <th>機械割(%)</th>
+          <th class="tyCols">続行TY(枚)</th>
+          <th class="tyCols">続行 純増(枚/G)</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+  <div id="psum" class="hint"></div>
+</div>
+
+<!-- 結果 -->
+<div class="card">
+  <h2>結果</h2>
+
+  <!-- 非等価では隠す（等価は等価モードで見る） -->
+  <div id="evRow" class="kpi">
+    <div class="line"><span class="label">総合EV（等価）</span>：<span class="big" id="evTotal">0</span> 円</div>
+  </div>
+
+  <div class="kpi">
+    <div class="line"><span class="label">平均消化G</span>：<span class="big" id="gTotal">0</span> G</div>
+  </div>
+
+  <div id="rateView" class="kpi"></div>
+  <div id="flag" class="hint"></div>
+</div>
+
+<script>
+  const tbody = document.getElementById("tbody");
+
+  const mode = document.getElementById("mode");
+  const spinMode = document.getElementById("spinMode");
+
+  const evNow = document.getElementById("evNow");
+  const machineNow = document.getElementById("machineNow");
+  const hitNow = document.getElementById("hitNow");
+  const spinNowManual = document.getElementById("spinNowManual");
+
+  const tyNow = document.getElementById("tyNow");
+  const incNow = document.getElementById("incNow");
+
+  const lend = document.getElementById("lend");
+  const rate = document.getElementById("rate");
+  const rot1k = document.getElementById("rot1k");
+  const hold = document.getElementById("hold");
+
+  const hitNowWrap = document.getElementById("hitNowWrap");
+  const manualNowWrap = document.getElementById("manualNowWrap");
+
+  function n(v){ return Number(v)||0; }
+
+  // 機械割→1GあたりEV（3枚掛け・60円＝1%）
+  function evPerG(mPct){ return 60*((mPct/100)-1); }
+  function gFromEV(ev,mPct){
+    const v = evPerG(mPct);
+    return v>0 ? ev/v : 0;
+  }
+
+  function bonusG_from_TY(ty, inc){
+    if(ty<=0 || inc<=0) return 0;
+    return ty / inc;
+  }
+
+  function updateGapView(){
+    const L = n(lend.value), R = n(rate.value), K = n(rot1k.value);
+    if(L<=0 || R<=0 || K<=0){
+      document.getElementById("gapView").textContent = "※貸出/交換率/1k回転数を入力してください";
+      return;
+    }
+    const buy = 1000/L;      // 円/枚
+    const cash = 100/R;      // 円/枚
+    const back = L*cash;     // 1000円分借りて全部換金
+    const gap = 1000-back;   // 目減り
+    const coinsPerG = L/K;   // 枚/G（投資推定）
+
+    document.getElementById("gapView").innerHTML =
+      `購入単価：${buy.toFixed(3)}円/枚 ／ 換金単価：${cash.toFixed(3)}円/枚 ／ ` +
+      `1,000円あたり目減り：約<b>${Math.round(gap).toLocaleString()}円</b>（戻り約${Math.round(back).toLocaleString()}円）<br>` +
+      `投資推定：1Gあたり<b>${coinsPerG.toFixed(3)}枚</b>（貸出${L}枚・1k${K}回転より）`;
+  }
+
+  function refreshUI(){
+    const noneq = mode.value==="nonequal";
+    document.getElementById("noneqArea").style.display = noneq ? "block":"none";
+    document.getElementById("eqHint").style.display = noneq ? "block":"none";
+
+    // 非等価モードでは等価EV行を隠す
+    document.getElementById("evRow").style.display = noneq ? "none" : "";
+
+    if(noneq) updateGapView();
+    else document.getElementById("gapView").textContent="";
+
+    // 当該の回すG入力切替
+    const sm = spinMode.value;
+    hitNowWrap.style.display = (sm==="hit") ? "" : "none";
+    manualNowWrap.style.display = (sm==="manual") ? "" : "none";
+
+    // 当該TY/純増は hit の時だけ表示
+    document.getElementById("tyAreaNow").style.display = (sm==="hit") ? "" : "none";
+
+    // 続行側TY/純増列も hit の時だけ表示
+    document.querySelectorAll(".tyCols").forEach(e=>{
+      e.style.display = (sm==="hit") ? "" : "none";
+    });
+  }
+
+  mode.onchange = ()=>{refreshUI();calc();};
+  spinMode.onchange = ()=>{refreshUI();calc();};
+
+  function addRow(hit=0, p=0, ev=0, m=110, ty=0, inc=0){
+    const tr=document.createElement("tr");
+    tr.innerHTML=`
+      <td><input type="number" step="0.1" value="${hit}" placeholder="1/x"></td>
+      <td><input type="number" step="0.1" value="${p}"></td>
+      <td class="col-wide"><input type="number" value="${ev}"></td>
+      <td><input type="number" step="0.01" value="${m}"></td>
+      <td class="tyCols"><input type="number" step="1" value="${ty}" placeholder="省略可"></td>
+      <td class="tyCols"><input type="number" step="0.01" value="${inc}" placeholder="省略可"></td>
+      <td><button onclick="this.closest('tr').remove();calc()">削除</button></td>
+    `;
+    tr.querySelectorAll("input").forEach(i=>i.oninput=()=>{refreshUI();calc();});
+    tbody.appendChild(tr);
+    refreshUI();calc();
+  }
+
+  function calc(){
+    refreshUI();
+
+    // --- 当該：回すG（回転） ---
+    const evNowY = n(evNow.value);
+    const mNowPct = n(machineNow.value);
+
+    let spinG_now = 0;
+    if(spinMode.value==="hit") spinG_now = n(hitNow.value);
+    else if(spinMode.value==="manual") spinG_now = n(spinNowManual.value);
+    else spinG_now = gFromEV(evNowY, mNowPct);
+
+    // --- 当該：追加G（TY/純増）※hit時だけ ---
+    const bonusG_now = (spinMode.value==="hit")
+      ? bonusG_from_TY(n(tyNow.value), n(incNow.value))
+      : 0;
+
+    const totalG_now = spinG_now + bonusG_now;
+
+    // 合算（等価EV / 総G）
+    let evTotal = evNowY;
+    let gTotal = totalG_now;
+
+    // 続行率合計
+    let ps = 0;
+
+    // 非等価投資推定に必要
+    const noneq = mode.value==="nonequal";
+    const L = n(lend.value), R = n(rate.value), K = n(rot1k.value);
+    const coinsPerG = (noneq && L>0 && K>0) ? (L/K) : 0;
+
+    // 非等価：当該の投資（回すGぶんだけ。追加Gは投資に含めない近似）
+    const coinIn_now = noneq ? (spinG_now * coinsPerG) : 0;
+    const cashCoins_now = noneq ? Math.max(0, coinIn_now - n(hold.value)) : 0;
+
+    // ★続行に持ち越せる枚数：当該の余剰メダル＋当該TY
+    // （当該TYは hit でないと入力欄が無い＝0扱い）
+    const carryCoins = noneq ? (Math.max(0, n(hold.value) - coinIn_now) + (spinMode.value==="hit" ? n(tyNow.value) : 0)) : 0;
+
+    // 続行行の集計
+    let invalid = false;
+
+    // 列固定：0hit 1p 2ev 3m 4ty 5inc
+    tbody.querySelectorAll("tr").forEach(tr=>{
+      const hit = n(tr.children[0].firstChild.value);
+      const p = n(tr.children[1].firstChild.value)/100;
+      const ev = n(tr.children[2].firstChild.value);
+      const m  = n(tr.children[3].firstChild.value);
+
+      // 続行：回すG（基本 hit、未入力なら保険で逆算）
+      let spinG = 0;
+      if(hit>0) spinG = hit;
+      else { spinG = gFromEV(ev, m); invalid = true; }
+
+      // 続行：追加G（TY/純増）※hit時だけ
+      let bonusG = 0;
+      if(spinMode.value==="hit"){
+        const ty = n(tr.children[4].firstChild.value);
+        const inc = n(tr.children[5].firstChild.value);
+        bonusG = bonusG_from_TY(ty, inc);
+      }
+
+      const totalG = spinG + bonusG;
+
+      ps += p;
+      evTotal += p*ev;
+      gTotal  += p*totalG;
+    });
+
+    // 表示：等価総合EVは「等価モードの時だけ」見せる
+    document.getElementById("evTotal").textContent = Math.round(evTotal).toLocaleString();
+    document.getElementById("gTotal").textContent  = Math.round(gTotal);
+    document.getElementById("psum").textContent    = `続行率合計：${(ps*100).toFixed(1)}%`;
+
+    // 実効機械割（合算EV/Gから逆算）
+    const evG = (gTotal>0) ? (evTotal/gTotal) : 0;
+    const mEff = (1 + evG/60) * 100;
+
+    // フラグ
+    let flag = "";
+    if(ps>1) flag = "続行率が100%を超えています";
+    if(invalid) flag = (flag?flag+" / ":"") + "続行の初当たり(1/x)が未入力の行があります（Gがブレやすい）";
+    document.getElementById("flag").textContent = flag;
+    document.getElementById("flag").className = "hint " + (flag ? "warn" : "");
+
+    // 結果表示（見やすい小技：改行＆順序整理）
+    const rateView = document.getElementById("rateView");
+
+    if(!noneq){
+      // 等価：機械割だけ見せる（スッキリ）
+      rateView.innerHTML = `
+        <div class="line"><span class="label">機械割</span>：<span class="big">${mEff.toFixed(2)}%</span></div>
+      `;
+      return;
+    }
+
+    // ---- 非等価：期待収支＋時給 ----
+    if(L<=0 || R<=0 || K<=0 || gTotal<=0){
+      rateView.innerHTML = `
+        <div class="line"><span class="label">機械割(合算)</span>：<span class="big">${mEff.toFixed(2)}%</span></div>
+      `;
+      return;
+    }
+
+    const buy  = 1000/L; // 円/枚（購入）
+    const cash = 100/R;  // 円/枚（換金）
+
+    // 差枚期待（等価EV→枚）
+    const netCoins_total = evTotal / 20;
+
+    // 非等価：続行の現金投資（carryCoins を使う）
+    let cashCoins_cont_expected = 0;
+    tbody.querySelectorAll("tr").forEach(tr=>{
+      const hit = n(tr.children[0].firstChild.value);
+      const p = n(tr.children[1].firstChild.value)/100;
+
+      let spinG = 0;
+      if(hit>0) spinG = hit;
+      else {
+        const ev = n(tr.children[2].firstChild.value);
+        const m  = n(tr.children[3].firstChild.value);
+        spinG = gFromEV(ev, m);
+      }
+
+      const coinIn = spinG * coinsPerG;
+      const cashCoins = Math.max(0, coinIn - carryCoins);
+      cashCoins_cont_expected += p * cashCoins;
+    });
+
+    // ★非等価収支（正しい式）
+    const profit =
+      (netCoins_total * cash) +
+      ((cashCoins_now + cashCoins_cont_expected) * (cash - buy));
+
+    // 参考：現金必要G（当該＋続行期待）
+    const cashCoins_total = cashCoins_now + cashCoins_cont_expected;
+    const cashG = cashCoins_total / coinsPerG;
+
+    // 時給（800G/h）
+    const hourG = 800;
+    const wage = profit / (gTotal / hourG);
+
+    rateView.innerHTML = `
+      <div class="line"><span class="label">期待収支(非等価)</span>：<span class="big">${Math.round(profit).toLocaleString()}</span> 円</div>
+      <div class="line">
+        <span class="label">時給</span>：<span class="big">${Math.round(wage).toLocaleString()}</span> 円
+        <span class="label">現金必要G(参考)</span>：<span class="big">${Math.round(cashG)}</span> G
+      </div>
+      <div class="line"><span class="label">機械割(合算)</span>：<span class="big">${mEff.toFixed(2)}%</span></div>
+    `;
+  }
+
+  // 入力イベント
+  [evNow, machineNow, hitNow, spinNowManual, tyNow, incNow, lend, rate, rot1k, hold].forEach(el=>{
+    if(el) el.oninput = ()=>{ refreshUI(); calc(); };
+  });
+
+  // 初期例
+  addRow(524, 11, 7694, 118.5, 0, 0); // hit,p,ev,m,ty,inc
+  refreshUI();
+  calc();
+</script>
+</body>
+</html>
