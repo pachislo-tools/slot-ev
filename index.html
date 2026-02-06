@@ -513,12 +513,23 @@ A. 当選分布を厳密入力しない設計なので、条件によってブ�
   function clamp01(x){ return Math.max(0, Math.min(1, x)); }
   function uid(){ return "id_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,8); }
 
-  function evPerG(mPct){ return 60*((mPct/100)-1); }
-  function gFromEV(ev,mPct){
-    const v = evPerG(mPct);
-    return v>0 ? ev/v : 0;
+  function evPerG(mPct){
+    // 1Gあたりの期待値（円）
+    // 例：98.7% → 60 * (-0.013) = -0.78円/G
+    return 60 * ((mPct / 100) - 1);
   }
-  function bonusG_from_TY(ty, inc){
+  function gFromEV(ev, mPct){
+    const v = evPerG(mPct);
+
+    // 100%ちょうどは1Gあたり0円なので逆算不可（0G扱い）
+    if(!isFinite(v) || Math.abs(v) < 1e-12) return 0;
+
+    const g = ev / v; // vがマイナスでもOK（EVと符号が揃えばGはプラスになる）
+
+    // 実運用上、回すGはマイナスにならない想定
+    return Math.max(0, g);
+  }
+function bonusG_from_TY(ty, inc){
     if(ty<=0 || inc<=0) return 0;
     return ty / inc;
   }
