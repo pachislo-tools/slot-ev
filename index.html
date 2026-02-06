@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>期待値＋続行パターン計算ツール</title>
+<title>期待値＋続行パターン計算ツール v2.1</title>
 <style>
   :root{
     --bg:#f6f7f9;
@@ -230,7 +230,7 @@
 </head>
 
 <body>
-<h1>期待値＋続行パターン計算ツール</h1>
+<h1>期待値＋続行パターン計算ツール v2.1</h1>
 
 <!-- ===== Top card (minimal) ===== -->
 <div class="card">
@@ -370,7 +370,7 @@
 ・交換率（枚/100円）…換金単価
 ・1k回転数 … 投資枚数/1Gの推定
 ・持ちメダル … 現金投資がどれくらい混ざるか
-・天井G … 現金投資の近似を安定させるため（最深部）
+・天井までG（残り）… 現金投資の近似を安定させるため（深いハマりの上限）
     </div>
   </div>
 
@@ -380,7 +380,7 @@
 このツールは「厳密な当選分布（何Gで当たるかの全分布）」までは入力しない設計です。
 その代わり、現金投資割合は
 ・平均初当たり（1/x相当）
-・天井Gで打ち切り
+・天井までG（残り）で上限カット
 の近似で期待化しています。
 
 ブレが出やすい条件：
@@ -468,7 +468,7 @@ A. 当選分布を厳密入力しない設計なので、条件によってブ�
     <label>交換率(枚/100円)<br><input id="rate" type="number" step="0.1" placeholder="例：5.6"></label>
     <label>1k回転数<br><input id="rot1k" type="number" step="0.1" placeholder="例：33.5"></label>
     <label>持ちメダル枚数<br><input id="hold" type="number" placeholder="例：500"></label>
-    <label>天井G（最深部）<br><input id="ceilingG" type="number" step="1" placeholder="例：1500"></label>
+    <label>天井までG（残り）<br><input id="ceilingG" type="number" step="1" placeholder="例：832（残りG）"></label>
   </div>
   <div id="gapView" class="hint"></div>
 </div>
@@ -528,6 +528,15 @@ A. 当選分布を厳密入力しない設計なので、条件によってブ�
 
     // 実運用上、回すGはマイナスにならない想定
     return Math.max(0, g);
+  }
+
+  function normalizedRate(raw){
+    // 交換率の入力ミス対策：52 → 5.2 を想定（÷10）
+    if(!(raw>0)) return {rate:raw, corrected:false, msg:""};
+    if(raw>=20 && raw<=200){
+      return {rate:raw/10, corrected:true, msg:`交換率が「${raw}」になっています。通常は「5.2」のように小数です → 自動で ${raw/10} に補正しました。`};
+    }
+    return {rate:raw, corrected:false, msg:""};
   }
 function bonusG_from_TY(ty, inc){
     if(ty<=0 || inc<=0) return 0;
@@ -672,7 +681,9 @@ function bonusG_from_TY(ty, inc){
 
   // ===== UI helpers =====
   function updateGapView(){
-    const L = n(lend.value), R = n(rate.value), K = n(rot1k.value);
+    const L = n(lend.value), rawR = n(rate.value), K = n(rot1k.value);
+    const nr = normalizedRate(rawR);
+    const R = nr.rate;
     if(L<=0 || R<=0 || K<=0){
       gapView.textContent = "※貸出/交換率/1k回転数を入力してください";
       return;
@@ -682,10 +693,12 @@ function bonusG_from_TY(ty, inc){
     const back = L*cash;
     const gap = 1000-back;
     const coinsPerG = L/K;
+    const rateNote = nr.corrected ? `
+※${nr.msg}` : "";
     gapView.innerHTML =
       `購入単価：${buy.toFixed(3)}円/枚 ／ 換金単価：${cash.toFixed(3)}円/枚 ／ ` +
       `1,000円あたり目減り：約${Math.round(gap).toLocaleString()}円（戻り約${Math.round(back).toLocaleString()}円）\n` +
-      `投資推定：1Gあたり${coinsPerG.toFixed(3)}枚`;
+      `投資推定：1Gあたり${coinsPerG.toFixed(3)}枚${rateNote}`;
   }
 
   function refreshUI(){
@@ -958,7 +971,7 @@ function bonusG_from_TY(ty, inc){
     { el: rate,      name:"交換率" },
     { el: rot1k,     name:"1k回転" },
     { el: hold,      name:"持ちメダル" },
-    { el: ceilingG,  name:"天井G" },
+    { el: ceilingG,  name:"天井までG（残り）" },
   ];
 
   function clearMissingMarks(){
