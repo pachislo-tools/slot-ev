@@ -370,7 +370,7 @@
 ・交換率（枚/100円）…換金単価
 ・1k回転数 … 投資枚数/1Gの推定
 ・持ちメダル … 現金投資がどれくらい混ざるか
-・天井までG（残り）… 現金投資の近似を安定させるため（深いハマりの上限）
+・（天井打ち切りは未対応：目安）… 現金投資の近似を安定させるため（深いハマりの上限）
     </div>
   </div>
 
@@ -380,7 +380,7 @@
 このツールは「厳密な当選分布（何Gで当たるかの全分布）」までは入力しない設計です。
 その代わり、現金投資割合は
 ・平均初当たり（1/x相当）
-・天井までG（残り）で上限カット
+・（天井打ち切りは未対応：目安）で上限カット
 の近似で期待化しています。
 
 ブレが出やすい条件：
@@ -468,8 +468,7 @@ A. 当選分布を厳密入力しない設計なので、条件によってブ�
     <label>交換率(枚/100円)<br><input id="rate" type="number" step="0.1" placeholder="例：5.6"></label>
     <label>1k回転数<br><input id="rot1k" type="number" step="0.1" placeholder="例：33.5"></label>
     <label>持ちメダル枚数<br><input id="hold" type="number" placeholder="例：500"></label>
-    <label>天井までG（残り）<br><input id="ceilingG" type="number" step="1" placeholder="例：832（残りG）"></label>
-  </div>
+</div>
   <div id="gapView" class="hint"></div>
 </div>
 
@@ -662,7 +661,6 @@ function bonusG_from_TY(ty, inc){
   const rate = document.getElementById("rate");
   const rot1k = document.getElementById("rot1k");
   const hold = document.getElementById("hold");
-  const ceilingG = document.getElementById("ceilingG");
   const gapView = document.getElementById("gapView");
 
   const contGroups = document.getElementById("contGroups");
@@ -902,9 +900,7 @@ function bonusG_from_TY(ty, inc){
         lend: lend.value,
         rate: rate.value,
         rot1k: rot1k.value,
-        hold: hold.value,
-        ceilingG: ceilingG.value,
-      },
+        hold: hold.value,      },
       cont: contGroupState.groups
         .sort((a,b)=>a.idx-b.idx)
         .map(g=>{
@@ -945,8 +941,6 @@ function bonusG_from_TY(ty, inc){
     rate.value = ne.rate ?? "";
     rot1k.value = ne.rot1k ?? "";
     hold.value = ne.hold ?? "";
-    ceilingG.value = ne.ceilingG ?? "";
-
     contGroups.innerHTML = "";
     contGroupState.groups = [];
     contGroupState.counter = 0;
@@ -970,9 +964,7 @@ function bonusG_from_TY(ty, inc){
     { el: lend,      name:"貸出" },
     { el: rate,      name:"交換率" },
     { el: rot1k,     name:"1k回転" },
-    { el: hold,      name:"持ちメダル" },
-    { el: ceilingG,  name:"天井までG（残り）" },
-  ];
+    { el: hold,      name:"持ちメダル" },  ];
 
   function clearMissingMarks(){
     document.querySelectorAll(".req-miss").forEach(x=>x.classList.remove("req-miss"));
@@ -1174,82 +1166,58 @@ function bonusG_from_TY(ty, inc){
       return;
     }
 
-    // non-eq
-    const L = n(lend.value), R = n(rate.value), K = n(rot1k.value), H = n(hold.value), GMAX = n(ceilingG.value);
-    if(L<=0 || R<=0 || K<=0 || GMAX<=0 || gTotal<=0){
+        // non-eq（目安）
+    const L = n(lend.value), rawR = n(rate.value), K = n(rot1k.value), H0 = n(hold.value);
+    const nr = normalizedRate(rawR);
+    const R = nr.rate;
+    const H = Math.max(0, H0);
+
+    if(L<=0 || R<=0 || K<=0 || gTotal<=0){
       rateView.innerHTML = `
         <div class="line"><span class="label">機械割(合算)</span>：<span class="big">${isFinite(mEff)?mEff.toFixed(2):"-"}%</span></div>
       `;
       return;
     }
 
-    const coinsPerG = L/K;
-    const buy  = 1000/L;
-    const cash = 100/R;
+    const coinValue = 100 / R;      // 換金単価（円/枚）
+    const coinCostCash = 1000 / L;  // 購入単価（円/枚）
+    const gapPerCoin = Math.max(0, coinCostCash - coinValue);
 
-    const netCoins_total = evTotal / 20;
+    // 投資ギャップ（目安）：当該の「初当たりまで」だけ現金投資になる想定（持ちメダル優先）。
+    // ※当選分布・出玉分布は未入力のため、現金投資が絡む部分は目安です。
+    const meanG_first = Math.max(0, nowG.spinG);
+    const coinsToFirst = (K>0) ? (meanG_first / K) * L : 3*meanG_first;
 
-    const nowER = expectedCashAndRemain(Math.max(0,H), Math.max(1e-9, nowG.spinG), Math.floor(GMAX), coinsPerG);
-    const cashCoins_now = nowER.cashCoins * hrNow;
+    // 当選率が100%でない場合、投資も期待値としてスケール
+    const coinsToFirstExp = coinsToFirst * hrNow;
 
-    const carryCoins = nowER.remainCoins + (spinMode.value==="hit" ? Math.max(0, n(tyNow.value)) : 0);
+    const holdUse = Math.min(H, coinsToFirstExp);
+    const cashCoins = Math.max(0, coinsToFirstExp - holdUse);
+    const extraGapYen = cashCoins * gapPerCoin;
 
-    const groups = [...contGroupState.groups].sort((a,b)=>a.idx-b.idx);
-    let reach = hrNow;
-    let cashCoins_cont_expected = 0;
-    let chainActive = false;
+    // 回収側：等価EV→枚数→換金価値
+    const evNoneq = (evTotal * (coinValue/20)) - extraGapYen;
 
-    for(let i=0; i<groups.length; i++){
-      const g = groups[i];
-      if(!g.onCheck.checked){
-        if(chainActive) break;
-        continue;
-      }
-      chainActive = true;
+    // “円ベース機械割”（参考）
+    const inCoinsTot = 3 * gTotal;
+    const outCoinsTot = inCoinsTot * (mEff/100);
+    const investYen = inCoinsTot*coinValue + extraGapYen;
+    const returnYen = outCoinsTot*coinValue;
+    const mNoneq = (investYen>0) ? (returnYen/investYen*100) : mEff;
 
-      let condEff = 0;
-      const reachBefore = reach;
-
-      g.tbody.querySelectorAll("tr").forEach(tr=>{
-        const hr  = clamp01(n(tr.children[1].firstChild.value)/100);
-        const p   = n(tr.children[2].firstChild.value)/100;
-        const hit = n(tr.children[0].firstChild.value);
-        const ev  = n(tr.children[3].firstChild.value);
-        const m   = n(tr.children[4].firstChild.value);
-
-        const spinG = (hit>0) ? hit : gFromEV(ev, m);
-        const wCond = p * hr;
-        const w = reachBefore * wCond;
-
-        condEff += wCond;
-
-        const er = expectedCashAndRemain(carryCoins, Math.max(1e-9, spinG), Math.floor(GMAX), coinsPerG);
-        cashCoins_cont_expected += w * er.cashCoins;
-      });
-
-      reach = reachBefore * condEff;
-      if(reach < 1e-12) break;
-    }
-
-    const cashCoins_total = cashCoins_now + cashCoins_cont_expected;
-
-    const profit =
-      (netCoins_total * cash) +
-      (cashCoins_total * (cash - buy));
-
-    const cashG = cashCoins_total / coinsPerG;
-
-    const hourG = 800;
-    const wage = profit / (gTotal / hourG);
+    const rateNote = nr.corrected ? `<div class="hint warn">${nr.msg}</div>` : "";
 
     rateView.innerHTML = `
-      <div class="line"><span class="label">期待収支(非等価)</span>：<span class="big">${Math.round(profit).toLocaleString()}</span> 円</div>
-      <div class="line">
-        <span class="label">時給</span>：<span class="big">${Math.round(wage).toLocaleString()}</span> 円
-        <span class="label">現金必要G(参考)</span>：<span class="big">${Math.round(cashG).toLocaleString()}</span> G
+      <div class="line"><span class="label">期待値（非等価）</span>：<span class="big">${isFinite(evNoneq)?Math.round(evNoneq).toLocaleString():"-"}円</span></div>
+      <div class="line"><span class="label">機械割（非等価・参考）</span>：<span class="big">${isFinite(mNoneq)?mNoneq.toFixed(2):"-"}%</span></div>
+      <div class="hint">
+        換金単価：${coinValue.toFixed(3)}円/枚 ／ 購入単価：${coinCostCash.toFixed(3)}円/枚 ／ ギャップ：${gapPerCoin.toFixed(3)}円/枚<br>
+        初当たりまで投資（目安）：${(coinsToFirstExp).toFixed(1)}枚（持ち使用${holdUse.toFixed(1)}枚／現金${cashCoins.toFixed(1)}枚） → ギャップ損 ${Math.round(extraGapYen).toLocaleString()}円
       </div>
-      <div class="line"><span class="label">機械割(合算)</span>：<span class="big">${mEff.toFixed(2)}%</span></div>
+      ${rateNote}
+      <div class="hint warn">※当選分布・出玉分布は未入力のため、現金投資が絡む部分は目安です。</div>
     `;
+
   }
 
   // ===== save/load UI =====
@@ -1307,7 +1275,7 @@ function bonusG_from_TY(ty, inc){
   document.getElementById("btnClear").onclick = ()=>{
     [evNow, machineNow, hitNow, spinNowManual, tyNow, incNow].forEach(el=>el.value="");
     hitRateNow.value = "100";
-    [lend, rate, rot1k, hold, ceilingG].forEach(el=>el.value="");
+    [lend, rate, rot1k, hold].forEach(el=>el.value="");
 
     contGroups.innerHTML = "";
     contGroupState.groups = [];
