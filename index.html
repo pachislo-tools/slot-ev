@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>期待値＋続行パターン計算ツール v2.1</title>
+<title>期待値＋続行パターン計算ツール v2.2</title>
 <style>
   :root{
     --bg:#f6f7f9;
@@ -230,7 +230,7 @@
 </head>
 
 <body>
-<h1>期待値＋続行パターン計算ツール v2.1</h1>
+<h1>期待値＋続行パターン計算ツール v2.2</h1>
 
 <!-- ===== Top card (minimal) ===== -->
 <div class="card">
@@ -370,7 +370,7 @@
 ・交換率（枚/100円）…換金単価
 ・1k回転数 … 投資枚数/1Gの推定
 ・持ちメダル … 現金投資がどれくらい混ざるか
-・（天井打ち切りは未対応：目安）… 現金投資の近似を安定させるため（深いハマりの上限）
+・※現金投資が絡む非等価条件では、投資状況（持ちメダル比率等）により数値がブレる場合があります。
     </div>
   </div>
 
@@ -380,7 +380,7 @@
 このツールは「厳密な当選分布（何Gで当たるかの全分布）」までは入力しない設計です。
 その代わり、現金投資割合は
 ・平均初当たり（1/x相当）
-・（天井打ち切りは未対応：目安）で上限カット
+・初当たり(1/x) と 1k回転数 を使って「初当たりまでの現金投資」を近似します。
 の近似で期待化しています。
 
 ブレが出やすい条件：
@@ -388,6 +388,8 @@
 ・当選率が低いゾーン（外れが多い）
 ・持ちメダルが少ない
 → この場合は、非等価の期待収支が現場感とズレる可能性があります（目安として使うのが安全）
+
+※実戦では、表示されている機械割より1〜2％低く見積もって判断すると、体感値に近くなることが多いです。
     </div>
   </div>
 
@@ -1196,7 +1198,15 @@ function bonusG_from_TY(ty, inc){
     const extraGapYen = cashCoins * gapPerCoin;
 
     // 回収側：等価EV→枚数→換金価値
-    const evNoneq = (evTotal * (coinValue/20)) - extraGapYen;
+    const profitCoinsEq = evTotal / 20;
+    const profitYenByExchange = profitCoinsEq * coinValue;
+    const recoveryGapYen = profitYenByExchange - evTotal; // だいたいマイナス（回収目減り）
+
+    // 投資側ギャップ（マイナス）
+    const investGapYen = - extraGapYen;
+
+    // 非等価EV（円）＝等価EV + 回収ギャップ + 投資ギャップ
+    const evNoneq = evTotal + recoveryGapYen + investGapYen;
 
     // “円ベース機械割”（参考）
     const inCoinsTot = 3 * gTotal;
@@ -1212,10 +1222,12 @@ function bonusG_from_TY(ty, inc){
       <div class="line"><span class="label">機械割（非等価・参考）</span>：<span class="big">${isFinite(mNoneq)?mNoneq.toFixed(2):"-"}%</span></div>
       <div class="hint">
         換金単価：${coinValue.toFixed(3)}円/枚 ／ 購入単価：${coinCostCash.toFixed(3)}円/枚 ／ ギャップ：${gapPerCoin.toFixed(3)}円/枚<br>
-        初当たりまで投資（目安）：${(coinsToFirstExp).toFixed(1)}枚（持ち使用${holdUse.toFixed(1)}枚／現金${cashCoins.toFixed(1)}枚） → ギャップ損 ${Math.round(extraGapYen).toLocaleString()}円
+        初当たりまで投資（目安）：${(coinsToFirstExp).toFixed(1)}枚（持ち使用${holdUse.toFixed(1)}枚／現金${cashCoins.toFixed(1)}枚）
+        <br>投資ギャップ：${Math.round(investGapYen).toLocaleString()}円 ／ 回収ギャップ：${Math.round(recoveryGapYen).toLocaleString()}円
       </div>
       ${rateNote}
-      <div class="hint warn">※当選分布・出玉分布は未入力のため、現金投資が絡む部分は目安です。</div>
+      <div class="hint warn">※当選分布・出玉分布は未入力のため、現金投資が絡む部分は目安です。持ちメダル比率が高いほど現金ギャップは小さくなります。</div>
+      <div class="hint warn">※実戦では、表示されている機械割より1〜2％低く見積もって判断すると体感値に近くなることが多いです。</div>
     `;
 
   }
