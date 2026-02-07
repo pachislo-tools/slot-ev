@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>閉店欠損 簡易計算ツール（1当て限定）</title>
+  <style>
+    :root { --fg:#111; --muted:#666; --bg:#fff; --card:#f6f6f6; --bd:#ddd; }
+    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif; color:var(--fg); background:var(--bg); }
+    header { padding:12px 16px; border-bottom:1px solid var(--bd); position:sticky; top:0; background:rgba(255,255,255,.95); backdrop-filter: blur(6px); display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    h1 { font-size:16px; margin:0; }
+    main { padding:16px; max-width: 980px; margin:0 auto; }
+    .grid { display:grid; grid-template-columns: 1fr; gap:12px; }
+    @media (min-width: 860px){ .grid { grid-template-columns: 1.1fr .9fr; } }
+    .card { background:var(--card); border:1px solid var(--bd); border-radius:14px; padding:14px; }
+    .card h2 { font-size:14px; margin:0 0 10px; }
+    .row { display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+    label { display:block; font-size:12px; color:var(--muted); margin-bottom:4px; }
+    input, button { width:100%; box-sizing:border-box; padding:10px 10px; border:1px solid var(--bd); border-radius:10px; background:#fff; font-size:14px; }
+    input[type="number"]{ appearance: textfield; }
+    button { cursor:pointer; }
+    .btnrow { display:flex; gap:10px; flex-wrap:wrap; }
+    .btn { padding:10px 12px; border-radius:10px; border:1px solid var(--bd); background:#fff; width:auto; }
+    .btn.primary { background:#111; color:#fff; border-color:#111; }
+    .small { font-size:12px; color:var(--muted); line-height:1.55; }
+    .results { display:grid; gap:10px; }
+    .kpi { background:#fff; border:1px solid var(--bd); border-radius:12px; padding:12px; }
+    .kpi .t { font-size:12px; color:var(--muted); }
+    .kpi .v { font-size:18px; font-weight:700; margin-top:4px; }
+    .warn { color:#b45309; font-size:12px; line-height:1.45; }
+    .err { color:#b91c1c; font-size:12px; line-height:1.45; }
+    table { width:100%; border-collapse: collapse; background:#fff; border:1px solid var(--bd); border-radius:12px; overflow:hidden; }
+    th, td { padding:10px 8px; border-bottom:1px solid var(--bd); font-size:13px; }
+    th { text-align:left; background:#fafafa; color:var(--muted); font-weight:600; }
+    tr:last-child td { border-bottom:none; }
+    .td-actions { width: 90px; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    .page { display:none; }
+    .page.active { display:block; }
+    .header-actions { display:flex; gap:10px; align-items:center; }
+    .linkbtn { border:1px solid var(--bd); background:#fff; border-radius:999px; padding:8px 12px; font-size:13px; cursor:pointer; }
+    .toggle { display:flex; align-items:center; gap:8px; margin-top:10px; }
+    .toggle input { width:auto; }
+    .pill { display:inline-block; padding:2px 8px; border-radius:999px; border:1px solid var(--bd); background:#fff; font-size:11px; color:var(--muted); }
+  </style>
+</head>
+<body>
+<header>
+  <h1>閉店欠損 簡易計算ツール（1当て限定）</h1>
+  <div class="header-actions">
+    <button class="linkbtn" id="toHelp" type="button">使い方</button>
+    <button class="linkbtn" id="toCalc" type="button" style="display:none;">計算に戻る</button>
+  </div>
+</header>
+
+<main>
+  <!-- CALC PAGE -->
+  <div class="page active" id="pageCalc">
+    <div class="grid">
+      <section class="card">
+        <h2>入力</h2>
+
+        <div class="row">
+          <div>
+            <label>残り時間（分）T</label>
+            <input id="T" type="number" inputmode="decimal" value="60" min="0" step="1">
+          </div>
+          <div>
+            <label>時速回転数（G/時）S</label>
+            <input id="S" type="number" inputmode="decimal" value="800" min="0" step="1">
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>初当たり確率 1/P の P（平均G）</label>
+            <input id="P" type="number" inputmode="decimal" value="199" min="0" step="1">
+          </div>
+          <div>
+            <label>純増（枚/G）a（実効値推奨）</label>
+            <input id="a" type="number" inputmode="decimal" value="3.0" min="0" step="0.1">
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>当選率（狙い成功率）p_hit（%）※直AT天井=100</label>
+            <input id="p_hit" type="number" inputmode="decimal" value="100" min="0" max="100" step="0.1">
+          </div>
+          <div>
+            <label>CZ突破率 p_cz（%）※直AT=100</label>
+            <input id="p_cz" type="number" inputmode="decimal" value="100" min="0" max="100" step="0.1">
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>天国移行率 p_heaven（%）※天国狙いのみ</label>
+            <input id="p_heaven" type="number" inputmode="decimal" value="100" min="0" max="100" step="0.1">
+          </div>
+          <div>
+            <label>切断時期待枚数（最大欠損値）L_max（枚）※任意</label>
+            <input id="Lmax" type="number" inputmode="decimal" placeholder="未入力=上限なし" min="0" step="1">
+          </div>
+        </div>
+
+        <div class="toggle">
+          <input id="simpleMode" type="checkbox" checked>
+          <label for="simpleMode" style="margin:0; color:var(--fg);">
+            簡易モード：<span class="mono">超過時欠損 = L_max</span>（到達率が1行でもOK）
+            <span class="pill">おすすめ</span>
+          </label>
+        </div>
+
+        <div style="margin-top:10px;">
+          <div class="small">
+            <b>このツールは簡易計算です（参考程度）。</b><br>
+            到達率は <b>出玉フェーズ到達後の条件付き</b>で入力：<span class="mono">Tail(C)=P(出玉 ≥ C | enter)</span>。<br>
+            まずは <b>C=取り切れる枚数（C_cap）</b> の行だけ作って、<b>それ以上が出る確率</b>を入れると早いです。
+          </div>
+        </div>
+
+        <div style="margin-top:12px;">
+          <div class="btnrow">
+            <button class="btn" id="addRow">行を追加（C=現在のC_cap）</button>
+            <button class="btn" id="addExample">例を挿入</button>
+            <button class="btn" id="clearRows">行をクリア</button>
+            <button class="btn primary" id="calcBtn">計算</button>
+          </div>
+        </div>
+
+        <div style="margin-top:12px;">
+          <table>
+            <thead>
+              <tr>
+                <th>枚数 C（以上）</th>
+                <th>到達率 Tail（%）</th>
+                <th class="td-actions">操作</th>
+              </tr>
+            </thead>
+            <tbody id="rows"></tbody>
+          </table>
+          <div id="rowMsg" class="warn" style="margin-top:8px;"></div>
+          <div id="rowErr" class="err" style="margin-top:6px;"></div>
+        </div>
+
+        <div style="margin-top:12px;" class="small">
+          注意：天国/引き戻し等で<b>通常転落するタイプのAT</b>は、純増がブレやすいので低め入力推奨（目安）。
+        </div>
+      </section>
+
+      <aside class="card">
+        <h2>結果</h2>
+        <div class="results">
+          <div class="kpi">
+            <div class="t">出玉フェーズ到達確率 p_enter</div>
+            <div class="v" id="kpiEnter">—</div>
+            <div class="small" id="kpiEnterSub">—</div>
+          </div>
+          <div class="kpi">
+            <div class="t">取り切れる枚数 C_cap（枚）</div>
+            <div class="v" id="kpiCap">—</div>
+            <div class="small" id="kpiCapSub">—</div>
+          </div>
+          <div class="kpi">
+            <div class="t">条件付き期待欠損 E[Loss | enter]（枚）</div>
+            <div class="v" id="kpiLossCond">—</div>
+            <div class="small" id="kpiLossCondSub">—</div>
+          </div>
+          <div class="kpi">
+            <div class="t">最終期待欠損 E[Loss]（枚）</div>
+            <div class="v" id="kpiLoss">—</div>
+            <div class="small" id="kpiLossYen">—</div>
+          </div>
+          <div class="kpi">
+            <div class="t">キャパ以上到達率 Tail(C_cap)（参考）</div>
+            <div class="v" id="kpiTailCap">—</div>
+            <div class="small">入力テーブルを線形補間して推定</div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- HELP PAGE -->
+  <div class="page" id="pageHelp">
+    <section class="card">
+      <h2>使い方</h2>
+
+      <div class="small">
+        <b>目的：</b>閉店までに「取り切れない可能性がある枚数」を、到達率（○枚以上の確率）で近似して期待欠損を出します。<br><br>
+
+        <b>まず最速で使う（おすすめ）</b><br>
+        1) 入力を埋める（残り時間/時速/初当たりP/純増/当選率など）<br>
+        2) 右に出た <b>C_cap（取り切れる枚数）</b> を基準に、<b>行を追加</b>（Cは自動でC_cap）<br>
+        3) <b>Tail（%）</b> に「C_cap以上が出る確率」を入れる<br>
+        4) <b>L_max</b> に「取り切れない時の平均欠損（切断時期待枚数など）」を入れる<br>
+        → <b>簡易モード</b>だと <span class="mono">期待欠損 ≒ Tail(C_cap) × L_max</span> で計算します。<br><br>
+
+        <b>もう少し正確にしたい</b><br>
+        ・行を増やして「5000枚以上 1%」「7000枚以上 0.2%」のように追加すると、欠損の近似が細かくなります。<br><br>
+
+        <b>入力の考え方</b><br>
+        ・<b>当選率（狙い成功率）</b>：今回の狙いで当たる確率（直AT天井狙いは100%）<br>
+        ・<b>CZ突破率</b>：突破が必要なら入力（不要なら100%）<br>
+        ・<b>天国移行率</b>：天国狙いなど「移行して初めて当たる」要素がある場合に入力（不要なら100%）<br>
+        ・<b>到達率 Tail</b>：出玉フェーズ到達後に「○枚以上になる確率」<br>
+        ・<b>L_max</b>：取り切れない場合の平均欠損（有利切断恩恵や“切断時期待枚数”など）。未入力なら上限なし。<br><br>
+
+        <b>注意</b><br>
+        ・本ツールは簡易計算（参考程度）です。<br>
+        ・天国/引き戻し等で通常転落するタイプのATは純増がブレやすいので低め入力推奨（目安）。<br>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+
+  function toNum(v){
+    if (v === null || v === undefined) return 0;
+    const s = (""+v).trim().replace(/,/g,'');
+    const n = Number(s);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  function ceilRoundInt(x){ return Math.ceil(Math.round(x)); }
+
+  function formatInt(x){
+    if (!Number.isFinite(x)) return "—";
+    return ceilRoundInt(x).toLocaleString("ja-JP");
+  }
+  function formatPct(x){
+    if (!Number.isFinite(x)) return "—";
+    return (x*100).toFixed(2) + "%";
+  }
+  function formatYen(x){
+    if (!Number.isFinite(x)) return "—";
+    return "約 " + ceilRoundInt(x).toLocaleString("ja-JP") + " 円";
+  }
+
+  function computeCap(){
+    const T = toNum($("T").value);
+    const S = toNum($("S").value);
+    const P = toNum($("P").value);
+    const a = toNum($("a").value);
+
+    const p_hit = Math.max(0, Math.min(1, toNum($("p_hit").value)/100));
+    const p_cz = Math.max(0, Math.min(1, toNum($("p_cz").value)/100));
+    const p_heaven = Math.max(0, Math.min(1, toNum($("p_heaven").value)/100));
+
+    // 出玉フェーズ到達確率（欠損の最終調整に使う）
+    const p_enter = p_hit * p_cz * p_heaven;
+
+    const G_cap = S * (T/60);
+
+    // 取り切れる枚数（C_cap）は「当たりが早まる要素＝当選率（狙い成功率）」のみで補正。
+    // CZ突破率・天国移行率は “当たった後” の要素なので、最大獲得枚数（C_cap）には影響させない。
+    const E_G_hit = P * p_hit; // simplified: zone hit can shorten the expected time to get the trigger
+
+    const G_AT = Math.max(G_cap - E_G_hit, 0);
+    const C_cap = a * G_AT;
+
+    return {p_enter, p_hit, p_cz, p_heaven, G_cap, E_G_hit, G_AT, C_cap};
+  }
+
+  function addRow(c="", tail=""){
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td><input type="number" inputmode="decimal" step="1" min="0" placeholder="例：3000" value="${c}"></td>
+      <td><input type="number" inputmode="decimal" step="0.1" min="0" max="100" placeholder="例：5" value="${tail}"></td>
+      <td class="td-actions"><button class="btn" type="button">削除</button></td>
+    `;
+    tr.querySelector("button").addEventListener("click", () => { tr.remove(); calc(); });
+    tr.querySelectorAll("input").forEach(inp => inp.addEventListener("input", () => calc()));
+    $("rows").appendChild(tr);
+    return tr;
+  }
+
+  function getRows(){
+    const rows = [];
+    [...$("rows").querySelectorAll("tr")].forEach(tr => {
+      const inputs = tr.querySelectorAll("input");
+      const C = toNum(inputs[0].value);
+      const TailPct = toNum(inputs[1].value);
+      if (C > 0 && TailPct >= 0) rows.push({C, Tail: Math.max(0, Math.min(1, TailPct/100))});
+    });
+    return rows;
+  }
+
+  function validateAndNormalize(rows){
+    const msgs = [];
+    const errs = [];
+    const sorted = [...rows].sort((a,b)=>a.C-b.C);
+
+    for (let i=0; i<sorted.length-1; i++){
+      if (sorted[i].C === sorted[i+1].C){
+        errs.push("同じ枚数Cが重複しています。Cは昇順・重複なし推奨。");
+        break;
+      }
+      if (sorted[i].Tail < sorted[i+1].Tail - 1e-12){
+        errs.push("到達率Tailは、枚数が大きくなるほど同じか下がる必要があります（単調減少）。");
+        break;
+      }
+    }
+    if (sorted.length === 0) msgs.push("到達率の行を追加してください（例：C_cap以上 5%）。");
+    return {sorted, msgs, errs};
+  }
+
+  function tailAt(sorted, x){
+    if (!sorted || sorted.length === 0) return NaN;
+    if (x <= 0) return 1.0;
+    if (x <= sorted[0].C) return sorted[0].Tail;
+    for (let i=0;i<sorted.length-1;i++){
+      const a = sorted[i], b = sorted[i+1];
+      if (x === a.C) return a.Tail;
+      if (x > a.C && x < b.C){
+        const t = (x - a.C) / (b.C - a.C);
+        return a.Tail + (b.Tail - a.Tail) * t;
+      }
+    }
+    return sorted[sorted.length-1].Tail;
+  }
+
+  function calc(){
+    const cap = computeCap();
+    const {p_enter, p_hit, p_cz, p_heaven, G_cap, E_G_hit, G_AT, C_cap} = cap;
+
+    const LmaxRaw = toNum($("Lmax").value);
+    const hasLmax = LmaxRaw > 0;
+    const Lmax = hasLmax ? LmaxRaw : Infinity;
+
+    const rawRows = getRows();
+    const {sorted, msgs, errs} = validateAndNormalize(rawRows);
+    $("rowMsg").textContent = msgs.join(" / ");
+    $("rowErr").textContent = errs.join(" / ");
+
+    const simpleMode = $("simpleMode").checked;
+
+    let E_loss_cond = NaN;
+    if (errs.length === 0 && sorted.length > 0){
+      if (simpleMode && hasLmax){
+        // Simple: expected loss given enter = Tail(C_cap) * Lmax
+        const tcap = tailAt(sorted, C_cap);
+        E_loss_cond = tcap * LmaxRaw;
+      } else {
+        // Detail: tail intervals with (C_k - C_cap), capped by Lmax
+        let sum = 0;
+        for (let k=0; k<sorted.length; k++){
+          const tail_k = sorted[k].Tail;
+          const tail_next = (k === sorted.length-1) ? 0 : sorted[k+1].Tail;
+          const p_k = Math.max(0, tail_k - tail_next);
+          const C_k = sorted[k].C;
+          let loss_k = Math.max(C_k - C_cap, 0);
+          loss_k = Math.min(loss_k, Lmax);
+          sum += p_k * loss_k;
+        }
+        E_loss_cond = sum;
+      }
+    }
+
+    const E_loss = Number.isFinite(E_loss_cond) ? (p_enter * E_loss_cond) : NaN;
+    const loss_yen = Number.isFinite(E_loss) ? (E_loss * 20) : NaN;
+
+    $("kpiEnter").textContent = formatPct(p_enter);
+    $("kpiEnterSub").textContent = `当選×CZ×天国 = ${formatPct(p_hit)} × ${formatPct(p_cz)} × ${formatPct(p_heaven)}`;
+
+    $("kpiCap").textContent = formatInt(C_cap) + " 枚";
+    $("kpiCapSub").textContent = `G_cap=${G_cap.toFixed(1)}G / E[G_hit]=${E_G_hit.toFixed(1)}G / AT可用=${G_AT.toFixed(1)}G`;
+
+    $("kpiLossCond").textContent = Number.isFinite(E_loss_cond) ? (formatInt(E_loss_cond) + " 枚") : "—";
+    $("kpiLossCondSub").textContent = (simpleMode && hasLmax && Number.isFinite(E_loss_cond))
+      ? `簡易：Tail(C_cap)×L_max（L_max=${formatInt(LmaxRaw)}枚）`
+      : (simpleMode && !hasLmax ? "簡易モードはL_max入力が必要（未入力のため通常計算）" : "通常：到達率テーブルから近似");
+
+    $("kpiLoss").textContent = Number.isFinite(E_loss) ? (formatInt(E_loss) + " 枚") : "—";
+    $("kpiLossYen").textContent = Number.isFinite(loss_yen) ? formatYen(loss_yen) : "—";
+
+    const tail_cap = (errs.length === 0) ? tailAt(sorted, C_cap) : NaN;
+    $("kpiTailCap").textContent = Number.isFinite(tail_cap) ? formatPct(tail_cap) : "—";
+  }
+
+  function showHelp(show){
+    $("pageCalc").classList.toggle("active", !show);
+    $("pageHelp").classList.toggle("active", show);
+    $("toHelp").style.display = show ? "none" : "inline-block";
+    $("toCalc").style.display = show ? "inline-block" : "none";
+    window.scrollTo(0,0);
+  }
+
+  $("toHelp").addEventListener("click", () => showHelp(true));
+  $("toCalc").addEventListener("click", () => showHelp(false));
+
+  $("addRow").addEventListener("click", () => {
+    const {C_cap} = computeCap();
+    const tr = addRow(String(Math.max(0, Math.round(C_cap))), "");
+    // focus Tail input
+    tr.querySelectorAll("input")[1].focus();
+    calc();
+  });
+
+  $("clearRows").addEventListener("click", () => { $("rows").innerHTML=""; calc(); });
+
+  $("addExample").addEventListener("click", () => {
+    $("rows").innerHTML="";
+    const {C_cap} = computeCap();
+    const cap = Math.max(0, Math.round(C_cap));
+    addRow(String(cap), "5");
+    addRow(String(cap + 2000), "1");
+    calc();
+  });
+
+  $("calcBtn").addEventListener("click", () => calc());
+
+  ["T","S","P","a","p_hit","p_cz","p_heaven","Lmax","simpleMode"].forEach(id => $(id).addEventListener("input", () => calc()));
+
+  // 初期行：C=現在のC_cap を自動セット
+  (function init(){
+    const {C_cap} = computeCap();
+    addRow(String(Math.max(0, Math.round(C_cap))), "");
+    calc();
+  })();
+</script>
+</body>
+</html>
