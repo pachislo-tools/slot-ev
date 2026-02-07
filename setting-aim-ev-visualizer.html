@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>設定狙い期待値 可視化</title>
+  <style>
+    :root { --card:#121826; --muted:#9aa4b2; --text:#e6edf6; --line:#223044; --good:#38d39f; --bad:#ff6b6b; --accent:#7aa2ff; }
+    * { box-sizing:border-box; font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", sans-serif; }
+    body { margin:0; background:linear-gradient(180deg,#070a10,#0b0f14); color:var(--text); }
+    .wrap { max-width:1120px; margin:0 auto; padding:18px; }
+    h1 { font-size:18px; margin:0 0 10px; }
+    .topnav { display:flex; gap:10px; align-items:center; margin-bottom:12px; flex-wrap:wrap; }
+    .tabbtn{ cursor:pointer; padding:10px 12px; border-radius:12px; border:1px solid var(--line); background:#0c1220; color:var(--text); }
+    .tabbtn.active{ border-color: rgba(122,162,255,.7); box-shadow: 0 0 0 3px rgba(122,162,255,.12); }
+    .grid { display:grid; grid-template-columns: 1fr; gap:12px; }
+    @media (min-width: 920px){ .grid { grid-template-columns: 1.1fr 0.9fr; } }
+    .card { background:rgba(18,24,38,.92); border:1px solid var(--line); border-radius:14px; padding:14px; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
+    .row { display:grid; grid-template-columns: 1fr 1fr; gap:10px; align-items:end; }
+    @media (max-width:560px){ .row { grid-template-columns: 1fr; align-items:stretch; } }
+    label { display:block; font-size:12px; color:var(--muted); margin:0 0 6px; min-height: 34px; }
+    @media (max-width:560px){ label { min-height: 0; } }
+    input[type="number"]{ width:100%; padding:10px 10px; border-radius:10px; border:1px solid var(--line); background:#0c1220; color:var(--text); }
+    .small { font-size:12px; color:var(--muted); line-height:1.45; }
+    table { width:100%; border-collapse: collapse; overflow:hidden; border-radius:12px; border:1px solid var(--line); }
+    th, td { padding:10px 8px; border-bottom:1px solid var(--line); text-align:right; font-size:13px; }
+    th { text-align:center; color:var(--muted); font-weight:600; background:#0c1220; }
+    td:first-child, th:first-child { text-align:center; }
+    tr:last-child td { border-bottom:none; }
+    .kpi { display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+    .kpi .box { padding:12px; border:1px solid var(--line); border-radius:12px; background:#0c1220; }
+    .kpi .t { font-size:12px; color:var(--muted); }
+    .kpi .v { font-size:18px; font-weight:700; margin-top:4px; }
+    .mono { font-variant-numeric: tabular-nums; }
+    .btnrow{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:12px; }
+    button{ cursor:pointer; padding:10px 12px; border-radius:12px; border:1px solid var(--line); background:#0c1220; color:var(--text); }
+    .warn { margin-top:10px; padding:10px 12px; border-radius:12px; border:1px dashed #3a4b68; color:var(--muted); background:rgba(12,18,32,.55); }
+    .bars { display:flex; flex-direction:column; gap:8px; margin-top:10px; }
+    .bar { display:grid; grid-template-columns: 44px 1fr 86px; gap:10px; align-items:center; }
+    .track { position:relative; height:10px; border-radius:999px; background:#0a0f1c; border:1px solid var(--line); overflow:hidden; }
+    .fill { position:absolute; inset:0 auto 0 0; width:0%; background: linear-gradient(90deg, rgba(56,211,159,.95), rgba(56,211,159,.35)); }
+    .fill.neg { background: linear-gradient(90deg, rgba(255,107,107,.95), rgba(255,107,107,.35)); }
+    .right { text-align:right; }
+    .pill { display:flex; gap:8px; align-items:center; padding:8px 10px; border:1px solid var(--line); border-radius:999px; background:#0c1220; flex-wrap:wrap; }
+    .hide { display:none; }
+    .howto h2 { font-size:15px; margin:0 0 8px; }
+    .howto ul { margin:8px 0 0 20px; }
+    .howto li { margin:6px 0; }
+    .kbd { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size:12px; padding:2px 6px; border-radius:8px; border:1px solid var(--line); background:#0c1220; color:var(--text); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>設定狙い期待値 可視化</h1>
+
+    <div class="topnav">
+      <button id="tabCalc" class="tabbtn active">計算</button>
+      <button id="tabHowto" class="tabbtn">使い方</button>
+      <span class="small">※等価のみ。IN=3枚/回転 → v1% = 0.6円/回転</span>
+    </div>
+
+    <section id="pageCalc">
+      <div class="grid">
+        <div class="card">
+          <div class="row">
+            <div>
+              <label>時速回転数（時給表示用）</label>
+              <input id="sph" type="number" value="800" min="1" step="1">
+            </div>
+            <div>
+              <label>ツモ率（%）＝「自分が続行する条件の台」を掴める確率</label>
+              <input id="tsumo" type="number" value="30" min="0" max="100" step="0.1">
+            </div>
+          </div>
+
+          <div style="height:10px"></div>
+          <div class="pill">
+            <span class="small">各設定の <b>判別G</b> と <b>続行G</b> を個別入力。続行Gが0なら「判別でヤメ」扱い。</span>
+          </div>
+
+          <div style="height:12px"></div>
+
+          <table id="tbl">
+            <thead>
+              <tr>
+                <th>設定</th>
+                <th>台数</th>
+                <th>機械割（%）</th>
+                <th>判別G</th>
+                <th>続行G</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+
+          <div class="btnrow">
+            <button id="fillExample">例を入力</button>
+            <button id="clearAll">クリア</button>
+          </div>
+
+          <div class="warn small">
+            ■ 「続行する台」＝続行Gが1以上の設定（例：56は打ち切り）<br>
+            ■ 本ツールは平均値ベースの近似（当選分布/荒さ/区間切断の期待値ズレは未考慮）
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="kpi">
+            <div class="box">
+              <div class="t">店内基準：1台あたり平均EV</div>
+              <div id="evShop" class="v mono">0</div>
+              <div class="small">台をランダムに打つ前提の平均</div>
+            </div>
+            <div class="box">
+              <div class="t">ツモ率基準：1試行あたりEV</div>
+              <div id="evTsumo" class="v mono">0</div>
+              <div class="small">ツモ率×続行平均EV + (1-ツモ率)×非続行平均EV</div>
+            </div>
+            <div class="box">
+              <div class="t">店内基準：時給</div>
+              <div id="wageShop" class="v mono">0</div>
+              <div class="small">EV_shop ÷ (G_shop/時速)</div>
+            </div>
+            <div class="box">
+              <div class="t">ツモ率基準：時給</div>
+              <div id="wageTsumo" class="v mono">0</div>
+              <div class="small">EV_tsumo ÷ (G_tsumo/時速)</div>
+            </div>
+          </div>
+
+          <div style="height:10px"></div>
+          <div class="small">設定別：EV寄与（Σ(台数×EV_s) の内訳）</div>
+          <div id="bars" class="bars"></div>
+
+          <div style="height:12px"></div>
+          <table>
+            <thead>
+              <tr>
+                <th>設定</th>
+                <th>配分</th>
+                <th>G_s</th>
+                <th>v_s（円/回転）</th>
+                <th>EV_s（円）</th>
+                <th>台数×EV_s</th>
+              </tr>
+            </thead>
+            <tbody id="detail"></tbody>
+          </table>
+
+          <div class="warn small" id="note"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="pageHowto" class="hide">
+      <div class="card howto">
+        <h2>このツールでできること</h2>
+        <div class="small">
+          「打ち出し前（挙動で機械割が変動する要素は無視）」の前提で、<br>
+          <b>設定配分（台数）×区間回転数（判別G/続行G）×機械割</b>から期待値を可視化します。
+        </div>
+
+        <div style="height:12px"></div>
+
+        <h2>入力のコツ</h2>
+        <ul>
+          <li><b>判別G</b>：その設定だった場合に「ヤメ判断が付くまで回す」回転数</li>
+          <li><b>続行G</b>：続行するなら、その後に回す回転数（0なら判別でヤメ）</li>
+          <li><b>ツモ率</b>：あなたが「続行条件を満たす台」を掴める確率（抽選/立ち回り/競合込みの体感値）</li>
+          <li><b>奇数挙動は早見切り、偶数挙動は粘るなど、店の設定の使い方を考慮した判別Gの入力が可能です</b></li>
+        </ul>
+
+        <div style="height:12px"></div>
+
+        <h2>出力の見方</h2>
+        <ul>
+          <li><b>店内基準EV</b>：店の配分だけで見た平均（あなたのツモ率を考慮しない）</li>
+          <li><b>ツモ率基準EV</b>：ツモ率で「続行台を掴める/外す」を混ぜた平均</li>
+          <li><b>設定別EV寄与</b>：どの設定がプラス/マイナスに効いてるかが一目で分かる</li>
+        </ul>
+
+        <div style="height:12px"></div>
+
+        <div class="warn small">
+          ※テンプレBの定義（IN=3枚/回転、等価）に合わせて <span class="kbd">v_s = (機械割-100)×0.6</span> を採用しています。<br>
+          ※より厳密にするなら「判別区間での損益」「続行時の期待値（当たりまで等）」の拡張もできます。
+        </div>
+      </div>
+    </section>
+  </div>
+
+<script>
+  const V_PER_PERCENT = 0.6;
+
+  const fmtInt = (x) => {
+    if (!isFinite(x)) return "0";
+    const s = Math.round(x).toString();
+    return s.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  };
+  const fmt1 = (x) => (isFinite(x) ? x.toFixed(1) : "0.0");
+  const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
+
+  const tbody = document.querySelector("#tbl tbody");
+  const bars = document.getElementById("bars");
+  const detail = document.getElementById("detail");
+  const note = document.getElementById("note");
+
+  const state = Array.from({length:6}, (_,i)=>({
+    s: i+1,
+    N: 0,
+    R: 100.0,
+    gPre: 300,
+    gAfter: 0
+  }));
+
+  function buildTable(){
+    tbody.innerHTML = "";
+    state.forEach((r)=>{
+      const tr = document.createElement("tr");
+
+      const tdS = document.createElement("td");
+      tdS.textContent = r.s;
+      tr.appendChild(tdS);
+
+      const mkNum = (key, step, min=0) => {
+        const td = document.createElement("td");
+        const inp = document.createElement("input");
+        inp.type = "number";
+        inp.step = step;
+        inp.min = min;
+        inp.value = r[key];
+        inp.addEventListener("input", ()=>{
+          r[key] = Number(inp.value);
+          recalc();
+        });
+        td.appendChild(inp);
+        return td;
+      };
+
+      tr.appendChild(mkNum("N", "1", 0));
+      tr.appendChild(mkNum("R", "0.1", 0));
+      tr.appendChild(mkNum("gPre", "1", 0));
+      tr.appendChild(mkNum("gAfter", "1", 0));
+
+      tbody.appendChild(tr);
+    });
+  }
+
+  function weightedAvg(values, weights){
+    const sumW = weights.reduce((a,w)=>a+w,0);
+    if (sumW <= 0) return 0;
+    let s = 0;
+    for (let i=0;i<values.length;i++) s += values[i]*weights[i];
+    return s / sumW;
+  }
+
+  function recalc(){
+    const sph = Number(document.getElementById("sph").value) || 800;
+    const T = clamp((Number(document.getElementById("tsumo").value)||0)/100, 0, 1);
+
+    const N_total = state.reduce((a,r)=> a + (Number(r.N)||0), 0);
+    const p = state.map(r => (N_total>0 ? (Number(r.N)||0)/N_total : 0));
+    const isCont = state.map(r => (Number(r.gAfter)||0) > 0);
+
+    const Gs = state.map(r => (Number(r.gPre)||0) + (Number(r.gAfter)||0));
+    const vs = state.map(r => ((Number(r.R)||0) - 100) * V_PER_PERCENT);
+    const EVs = state.map((r,i)=> vs[i] * Gs[i]);
+
+    const EV_shop = EVs.reduce((a,ev,i)=> a + ev * p[i], 0);
+    const G_shop = Gs.reduce((a,g,i)=> a + g * p[i], 0);
+    const wage_shop = (sph>0 && G_shop>0) ? (EV_shop / (G_shop / sph)) : 0;
+
+    const pCont = state.map((r,i)=> isCont[i] ? p[i] : 0);
+    const pDrop = state.map((r,i)=> !isCont[i] ? p[i] : 0);
+
+    const EV_cont = weightedAvg(EVs, pCont);
+    const EV_drop = weightedAvg(EVs, pDrop);
+    const G_cont = weightedAvg(Gs, pCont);
+    const G_drop = weightedAvg(Gs, pDrop);
+
+    const EV_tsumo = T * EV_cont + (1 - T) * EV_drop;
+    const G_tsumo = T * G_cont + (1 - T) * G_drop;
+    const wage_tsumo = (sph>0 && G_tsumo>0) ? (EV_tsumo / (G_tsumo / sph)) : 0;
+
+    document.getElementById("evShop").textContent = fmtInt(EV_shop);
+    document.getElementById("evTsumo").textContent = fmtInt(EV_tsumo);
+    document.getElementById("wageShop").textContent = fmtInt(wage_shop);
+    document.getElementById("wageTsumo").textContent = fmtInt(wage_tsumo);
+
+    const contrib = state.map((r,i)=> (Number(r.N)||0) * EVs[i]);
+    bars.innerHTML = "";
+    const maxAbs = Math.max(1, ...contrib.map(x=>Math.abs(x)));
+    state.forEach((r,i)=>{
+      const wrap = document.createElement("div");
+      wrap.className = "bar";
+
+      const left = document.createElement("div");
+      left.className = "small mono right";
+      left.textContent = "設定" + r.s;
+      wrap.appendChild(left);
+
+      const track = document.createElement("div");
+      track.className = "track";
+      const fill = document.createElement("div");
+      fill.className = "fill" + (contrib[i] < 0 ? " neg" : "");
+      fill.style.width = (Math.abs(contrib[i]) / maxAbs * 100).toFixed(1) + "%";
+      track.appendChild(fill);
+      wrap.appendChild(track);
+
+      const right = document.createElement("div");
+      right.className = "small mono right";
+      right.textContent = fmtInt(contrib[i]);
+      wrap.appendChild(right);
+
+      bars.appendChild(wrap);
+    });
+
+    detail.innerHTML = "";
+    state.forEach((r,i)=>{
+      const tr = document.createElement("tr");
+      const td = (txt) => { const x=document.createElement("td"); x.className="mono"; x.textContent=txt; return x; };
+
+      tr.appendChild(td(r.s));
+      tr.appendChild(td((p[i]*100).toFixed(1) + "%"));
+      tr.appendChild(td(Math.round(Gs[i]).toString()));
+      tr.appendChild(td(fmt1(vs[i])));
+      tr.appendChild(td(fmtInt(EVs[i])));
+      tr.appendChild(td(fmtInt(contrib[i])));
+      detail.appendChild(tr);
+    });
+
+    const shareCont = pCont.reduce((a,x)=>a+x,0);
+    if (N_total === 0){
+      note.textContent = "台数が0です。台数を入れると配分が計算されます。";
+    } else if (shareCont === 0 && T > 0){
+      note.textContent = "注意：続行G>0の設定がありません。ツモ率基準は非続行EVと同じになります。";
+    } else if (shareCont > 0 && Math.abs(shareCont - T) >= 0.15){
+      note.textContent =
+        "メモ：店内の「続行設定比率」は " + (shareCont*100).toFixed(1) +
+        "%。ツモ率 " + (T*100).toFixed(1) + "% はあなたの体感（抽選/立ち回り/競合）なので、ズレてもOK。";
+    } else {
+      note.textContent =
+        "メモ：続行Gが0の設定は「判別でヤメ」。続行Gを設定ごとに変えるだけで、早見切り/粘りを表現できます。";
+    }
+  }
+
+  document.getElementById("fillExample").addEventListener("click", ()=>{
+    const ex = [
+      {N: 4, R: 97.0, gPre: 2000, gAfter: 0},
+      {N: 4, R: 99.0, gPre: 2000, gAfter: 0},
+      {N: 0, R: 100.0, gPre: 2000, gAfter: 0},
+      {N: 1, R: 105.0, gPre: 2000, gAfter: 7000},
+      {N: 0, R: 100.0, gPre: 2000, gAfter: 0},
+      {N: 1, R: 114.9, gPre: 2000, gAfter: 7000},
+    ];
+    ex.forEach((v,i)=> Object.assign(state[i], v));
+    document.getElementById("tsumo").value = 30;
+    document.getElementById("sph").value = 800;
+    buildTable();
+    recalc();
+  });
+
+  document.getElementById("clearAll").addEventListener("click", ()=>{
+    state.forEach(r=>{ r.N=0; r.R=100; r.gPre=300; r.gAfter=0; });
+    buildTable();
+    recalc();
+  });
+
+  ["sph","tsumo"].forEach(id=>{
+    document.getElementById(id).addEventListener("input", recalc);
+  });
+
+  const tabCalc = document.getElementById("tabCalc");
+  const tabHowto = document.getElementById("tabHowto");
+  const pageCalc = document.getElementById("pageCalc");
+  const pageHowto = document.getElementById("pageHowto");
+  function show(which){
+    if (which === "calc"){
+      tabCalc.classList.add("active"); tabHowto.classList.remove("active");
+      pageCalc.classList.remove("hide"); pageHowto.classList.add("hide");
+    } else {
+      tabHowto.classList.add("active"); tabCalc.classList.remove("active");
+      pageHowto.classList.remove("hide"); pageCalc.classList.add("hide");
+    }
+  }
+  tabCalc.addEventListener("click", ()=>show("calc"));
+  tabHowto.addEventListener("click", ()=>show("howto"));
+
+  buildTable();
+  recalc();
+</script>
+</body>
+</html>
