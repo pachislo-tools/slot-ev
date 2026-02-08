@@ -1,0 +1,1878 @@
+
+  <details id="howto" class="card howto-card" style="margin:16px 0;">
+    <summary style="cursor:pointer; font-weight:700; font-size:18px; margin:0; padding:4px 0;">使い方</summary>
+    <div style="margin-top:10px;">
+
+    <details>
+      <summary style="cursor:pointer; font-weight:700; margin:6px 0;">① 最短手順（まず動かす）</summary>
+      <ol style="margin:8px 0 0 18px; line-height:1.7;">
+        <li><b>機種テンプレ（内蔵）</b>を選ぶ → <b>「テンプレを一括適用」</b>を押す</li>
+        <li>上の3つのセレクト（<b>初期モード分布 / 周期当選分布 / 周期pt分布（1周期目）</b>）が埋まるのを確認</li>
+        <li><b>開始pt（現在pt）</b>を入力（朝イチや途中からならその時点のpt）</li>
+        <li><b>貸出枚数（1k）</b>と<b>交換枚数（1k）</b>を入力（等価なら50/50、46/52など）</li>
+        <li>必要なら<b>持ちメダル（開始時・枚）</b>を入力（未入力=0）</li>
+        <li><b>「期待値を計算」</b>を押す</li>
+      </ol>
+      <p style="margin:8px 0 0; color:#555;">
+        ※非等価（50/50以外）の場合はKPIが<b>円</b>と<b>時給</b>表示になります。等価は機械割表示になります（内部の枚EVは保持）。
+      </p>
+    </details>
+
+    <details>
+      <summary style="cursor:pointer; font-weight:700; margin:10px 0;">② セレクトが埋まらない時（＝計算が破綻しやすいポイント）</summary>
+      <ul style="margin:8px 0 0 18px; line-height:1.7;">
+        <li><b>テンプレを一括適用</b>を押した後、<b>初期モード分布</b>などが「空」のままなら、その状態では計算できません（内部データが未セット）。</li>
+        <li>まずテンプレを選び直し → 一括適用を再実行してください。</li>
+        <li>それでも埋まらない場合は、ブラウザの自動復元データが混ざっている可能性があります。<b>別ファイル名で保存して開く</b>／<b>Ctrl+F5</b>で再読み込みが有効です。</li>
+      </ul>
+    </details>
+
+    <details>
+      <summary style="cursor:pointer; font-weight:700; margin:10px 0;">③ 「データ入力（手入力・コピペ）」の詳しい説明</summary>
+      <p style="margin:8px 0 0; line-height:1.7;">
+        下部の「データ入力（手入力・コピペ）」は、テンプレにない機種や独自解析用の入力欄です。
+        <b>貼り付ける内容の形式が崩れると計算が止まります</b>（空行や区切り記号の違いが原因になりやすい）ので、以下を守ってください。
+      </p>
+
+      <h3 style="margin:10px 0 6px; font-size:16px;">A. 表タイプと貼り付けの基本ルール</h3>
+      <ul style="margin:0 0 0 18px; line-height:1.7;">
+        <li><b>表タイプ</b>（例：初期モード分布 / 周期当選分布 / 周期pt分布 など）を先に選ぶ</li>
+        <li><b>区切りはカンマ</b>または<b>タブ</b>（Excel/スプレッドシートからの貼り付け推奨）</li>
+        <li>数値は<b>小数OK</b>（例：0.25）／百分率入力の欄は指示に従い<b>%</b>ではなく<b>数値</b>で入れる</li>
+        <li>空白行・全角スペースが混ざると失敗しやすい → 迷ったら一度メモ帳に貼って整形</li>
+      </ul>
+
+      <h3 style="margin:10px 0 6px; font-size:16px;">B. 各表の意味（どこがズレると壊れるか）</h3>
+      <div style="overflow:auto;">
+        <table style="border-collapse:collapse; width:100%; min-width:760px;">
+          <thead>
+            <tr>
+              <th style="border:1px solid #ddd; padding:8px; background:#fafafa;">表</th>
+              <th style="border:1px solid #ddd; padding:8px; background:#fafafa;">役割</th>
+              <th style="border:1px solid #ddd; padding:8px; background:#fafafa;">入力のコツ</th>
+              <th style="border:1px solid #ddd; padding:8px; background:#fafafa;">よくある事故</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="border:1px solid #ddd; padding:8px;"><b>初期モード分布</b></td>
+              <td style="border:1px solid #ddd; padding:8px;">開始時点のモード割合（A/B/C…など）</td>
+              <td style="border:1px solid #ddd; padding:8px;">合計が100%でなくてもOK（内部で正規化）</td>
+              <td style="border:1px solid #ddd; padding:8px;">モード名の表記ブレ（AとＡ、空白付きなど）</td>
+            </tr>
+            <tr>
+              <td style="border:1px solid #ddd; padding:8px;"><b>周期当選分布</b></td>
+              <td style="border:1px solid #ddd; padding:8px;">各モードごとの「何周期目で当たるか」分布</td>
+              <td style="border:1px solid #ddd; padding:8px;">各モード内で合計≒1になるのが理想（内部で補正あり）</td>
+              <td style="border:1px solid #ddd; padding:8px;">“共通”の扱いミス、周期番号が文字列化</td>
+            </tr>
+            <tr>
+              <td style="border:1px solid #ddd; padding:8px;"><b>周期pt分布（1周期目）</b></td>
+              <td style="border:1px solid #ddd; padding:8px;">当選時の獲得pt（or到達pt）分布</td>
+              <td style="border:1px solid #ddd; padding:8px;">単位（pt）を統一。表記ゆれ注意</td>
+              <td style="border:1px solid #ddd; padding:8px;">pt列と確率列が入れ替わる／区切り違い</td>
+            </tr>
+            <tr>
+              <td style="border:1px solid #ddd; padding:8px;"><b>周期pt分布（2周期目以降）</b></td>
+              <td style="border:1px solid #ddd; padding:8px;">2周期目以降のpt分布（機種によって別テーブル）</td>
+              <td style="border:1px solid #ddd; padding:8px;">未入力なら「1周期目」を流用（機種仕様に合わせて）</td>
+              <td style="border:1px solid #ddd; padding:8px;">“未入力なら無効”の判定を誤解して空のまま計算</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 style="margin:10px 0 6px; font-size:16px;">C. 保存と再利用（壊れない運用）</h3>
+      <ul style="margin:0 0 0 18px; line-height:1.7;">
+        <li>手入力で作った表は、<b>「計算→プリセット上書き保存」</b>で保存できます。</li>
+        <li>同じ端末・同じブラウザなら次回も復元されます（端末/ブラウザ依存）。</li>
+        <li>公開運用では「テンプレ」中心が安全。手入力は上級者向けにすると事故が減ります。</li>
+      </ul>
+    </details>
+
+    <details>
+      <summary style="cursor:pointer; font-weight:700; margin:10px 0;">④ 入力項目の意味（上段の数値欄）</summary>
+      <ul style="margin:8px 0 0 18px; line-height:1.7;">
+        <li><b>1Gあたりの平均pt（pt/G）</b>：通常時のpt増加速度。pt管理機の“貯まり”の設定</li>
+        <li><b>1kあたりの回転数（回/1k）</b>：等価前提で内部計算。非等価でもここは同じ回転数でOK</li>
+        <li><b>通常時時速（G/時）</b>：時給換算用。デフォルト800を基準に調整</li>
+        <li><b>TY（平均獲得枚数）</b>：当選1回あたりの平均獲得枚数</li>
+        <li><b>純増（枚/G）</b>：AT/ART中の純増。機械割算出に使う</li>
+        <li><b>開始pt（現在pt）</b>：いま貯まっているpt（途中から座った時はその時点のpt）</li>
+        <li><b>貸出枚数（1k）</b>：1000円で借りる枚数（例：46）</li>
+        <li><b>交換枚数（1k）</b>：1000円に交換する枚数（例：52）</li>
+        <li><b>持ちメダル（開始時・枚）</b>：持ちメダル優先で消費する近似。0なら全額現金投資扱い</li>
+      </ul>
+    </details>
+
+    <details>
+      <summary style="cursor:pointer; font-weight:700; margin:10px 0;">⑤ よくある質問（動かない時）</summary>
+      <ul style="margin:8px 0 0 18px; line-height:1.7;">
+        <li><b>Q. 計算ボタンを押しても結果が出ない</b><br>→ セレクト（初期モード/周期当選/pt分布）が空の可能性。テンプレ一括適用をやり直してください。</li>
+        <li><b>Q. 非等価で期待値が“枚”に見える</b><br>→ 非等価はKPIが円表示です。等価は円/機械割が切り替わります。</li>
+        <li><b>Q. 数字が急にズレた</b><br>→ 保存データの混入やテンプレ未適用が多いです。別名保存で開き直すと改善します。</li>
+      </ul>
+    </details>
+  
+    <details>
+      <summary style="cursor:pointer; font-weight:700; margin:10px 0;">⑥ 幅のある前兆の扱いについて</summary>
+      <p style="margin:8px 0 0; line-height:1.7;">
+        本ツールでは、<b>前兆が「一定G数の幅」を持つ機種</b>について、以下の考え方で近似しています。
+      </p>
+      <ul style="margin:6px 0 0 18px; line-height:1.7;">
+        <li>前兆G数が「○〜○G」と幅を持つ場合、<b>平均値（中央値）</b>を代表値として使用</li>
+        <li>前兆中のレア役・抽選の偏りは考慮せず、<b>通常時の独立抽選として近似</b></li>
+        <li>前兆によるゲーム数ロスは、<b>期待値計算に一様に織り込まれる</b>形になります</li>
+      </ul>
+      <p style="margin:8px 0 0; color:#555;">
+        ※ 前兆が極端に長い／短い、または前兆中の抽選内容が通常時と大きく異なる機種では、
+        実際の期待値とズレる可能性があります。その場合は<b>前兆Gを短め／長めに調整</b>して感度を確認してください。
+      </p>
+    </details>
+
+      </div>
+  </details>
+
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>周期/モード期待値ツール：プリセット保存＋期待値計算（v6.0）</title>
+<style>
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP",sans-serif;margin:16px;line-height:1.35;color:#111}
+  .wrap{max-width:1200px;margin:0 auto}
+  h1{font-size:20px;margin:0 0 12px}
+  h2{font-size:16px;margin:0 0 10px}
+  .card{border:1px solid #ddd;border-radius:14px;padding:12px;background:#fff;margin-bottom:12px}
+  label{display:block;font-size:12px;color:#444;margin:10px 0 6px}
+  input,select,button,textarea{width:100%;padding:10px;border:1px solid #ccc;border-radius:12px;font-size:14px;background:#fff}
+  button{cursor:pointer}
+  textarea{min-height:110px}
+  .muted{color:#666;font-size:12px}
+  .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media (max-width:900px){.row3{grid-template-columns:1fr} .row2{grid-template-columns:1fr}}
+  .btns{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .btns button{width:auto}
+  .pill{display:inline-block;padding:4px 8px;border:1px solid #ddd;border-radius:999px;font-size:12px;color:#444}
+  .hint{background:#f4fff7;border:1px solid #d8ffe5;padding:10px;border-radius:12px}
+  .warn{background:#fff7e6;border:1px solid #ffd59a;padding:10px;border-radius:12px}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace}
+  .hr{height:1px;background:#eee;margin:10px 0}
+  table{width:100%;border-collapse:separate;border-spacing:0}
+  th,td{border-bottom:1px solid #eee;padding:8px;text-align:left;font-size:13px;vertical-align:top}
+  th{font-size:12px;color:#555;position:sticky;top:0;background:#fff}
+  .cell-inp{width:100%;padding:8px;border:1px solid #ddd;border-radius:10px;font-size:13px}
+  .kpi{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+  @media (max-width:900px){.kpi{grid-template-columns:1fr 1fr}}
+  .kpi .box{border:1px solid #eee;border-radius:14px;padding:10px}
+  .kpi .v{font-size:20px;font-weight:700}
+  details summary{cursor:pointer}
+  .stickybar{position:sticky;top:0;z-index:10;background:#111;color:#fff;padding:8px 10px;border-radius:12px;margin-bottom:12px;display:none}
+
+/* --- 公開向けUI微調整 --- */
+.kpi-emph{border:2px solid #e5e7eb;border-radius:14px;padding:10px;background:#fff;}
+.kpi-emph .num{font-size:1.25em;}
+@media (max-width: 520px){
+  .kpi-emph{padding:8px;}
+  .kpi-emph .num{font-size:1.35em;}
+}
+/* 使い方カードは初期閉じ前提（detailsは開閉） */
+
+
+/* --- 公開向けUI：読み込み行の見た目改善 --- */
+.contextRow{display:grid; grid-template-columns:minmax(220px,1fr) auto; align-items:center; gap:10px;}
+.contextRow .btns{justify-content:flex-end; flex-wrap:wrap; gap:8px;}
+.contextRow .btns button{white-space:nowrap;}
+@media (max-width: 720px){
+  .contextRow{grid-template-columns:1fr;}
+  .contextRow .btns{justify-content:flex-start;}
+}
+/* 使い方：summaryをシンプルに */
+#howto > summary{list-style:none;}
+#howto > summary::-webkit-details-marker{display:none;}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>周期/モード期待値ツール <span class="pill"></span> <span class="muted"></span></h1>
+
+  <div class="card">
+    <h2>プリセット（自由入力＆複数保存）</h2>
+    <div class="row3">
+      <div>
+        <label>プリセット名</label>
+        <input id="presetName" placeholder="例：本機デフォ / 店A / リセ後 など" />
+      </div>
+      <div>
+        <label>保存済みプリセット</label>
+        <select id="presetSelect"></select>
+      </div>
+      <div>
+        <label>操作</label>
+        <div class="btns">
+          <button type="button" id="savePreset">保存/上書き</button>
+          <button type="button" id="loadPreset">読み込み</button>
+          <button type="button" id="deletePreset">削除</button>
+          <button type="button" id="exportPreset">エクスポート(JSON)</button>
+          <button type="button" id="importPresetBtn">インポート(JSON)</button>
+        </div>
+      </div>
+    </div>
+    <div id="presetMsg" class="muted" style="margin-top:8px"></div>
+    <input id="importFile" type="file" accept="application/json" style="display:none" />
+    <div class="hr"></div>
+    <div class="hint muted">
+      ✅ まずは「デフォルトを読み込む→この表を適用」を各表で1回ずつやってから「プリセット保存」すると、上の分布セレクトが埋まります。<br>
+      ※データはLocalStorage保存（端末/ブラウザ依存）。JSONで移行できます。
+    </div>
+  </div>
+
+  <div class="card">
+    
+    <h2>期待値計算</h2>
+    <div class="row2">
+      <div><label>機種テンプレ（内蔵）</label><select id="selMachineTpl"></select>
+        <div class="muted">※分布セレクト＆一部の基本入力をまとめて反映</div>
+      </div>
+      <div><label>&nbsp;</label><button type="button" id="btnApplyMachineTpl">テンプレを一括適用</button></div>
+    </div>
+    <div class="hr"></div>
+
+
+    <!-- 周期pt計算（上段2行） -->
+    <div class="row3">
+      <div><label>初期モード分布</label><select id="selModeDist"></select></div>
+      <div><label>周期当選分布</label><select id="selCycleDist"></select></div>
+      <div><label>周期pt分布（1周期目）</label><select id="selPt1"></select></div>
+    </div>
+
+    <div class="row3">
+      <div>
+        <label>CZ失敗後モード移行率</label>
+        <select id="selModeTrans"></select>
+        <div class="muted">※スルー回数補正に使用（未選択なら補正なし）</div>
+      </div>
+      
+      <div>
+        <label>視差：モード◯以上の割合</label>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input id="chkModeAtLeast" type="checkbox" style="width:auto;margin:0;" />
+          <span class="muted" style="font-size:13px;">適用</span>
+        </div>
+        <select id="selModeAtLeast"></select>
+        <div class="muted">※例：「B以上」を◯%に補正（グループ内比率は維持）</div>
+      </div>
+      <div>
+        <label>モード◯以上（%）</label>
+        <input id="modeAtLeastPct" type="number" step="0.1" min="0" max="100" value="0" />
+        <div class="muted">0 のままなら実質OFF（適用チェック時のみ有効）</div>
+      </div>
+    
+    <div class="row3" style="margin-top:10px;">
+      <div>
+        <label>天井周期短縮（分布移し替え）</label>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input id="chkCeilShort" type="checkbox" style="width:auto;margin:0;" />
+          <span class="muted" style="font-size:13px;">適用</span>
+        </div>
+        <div class="muted">※例：6周期天井→5周期天井（6周期の当選分布を5周期へ移す）</div>
+      </div>
+      <div>
+        <label>通常天井周期</label>
+        <input id="ceilFrom" type="number" step="1" min="1" value="6" />
+      </div>
+      <div>
+        <label>短縮後天井周期</label>
+        <input id="ceilTo" type="number" step="1" min="1" value="5" />
+      </div>
+    </div>
+
+</div>
+
+    <div class="row3">
+      <div><label>周期pt分布（2周期以降）</label><select id="selPt2p"></select></div>
+      <div>
+        <label>次回周期天井短縮判定pt（以上で短縮）</label>
+        <input id="shortThPt" type="number" step="1" value="" placeholder="未入力なら無効" />
+        <div class="muted">※到達ptがこの値以上のケースでは「短縮時 周期pt分布」に切替</div>
+      </div>
+      <div>
+        <label>短縮時 周期pt分布</label>
+        <select id="selPtShort"></select>
+        <div class="muted">※未選択なら短縮なし</div>
+      </div>
+    </div>
+
+    <!-- 台の基本事項（2行） -->
+    <div class="row3">
+      <div><label>1Gあたりの平均pt（pt/G）</label><input id="ptPerG" type="number" step="0.001" value="1.0" /><div class="muted">※例：1G=1ptなら1.0</div></div>
+      <div><label>1kあたりの回転数（回/1k）</label><input id="spinPer1k" type="number" step="0.1" value="33.0" /><div class="muted">※等価想定：1k=50枚として「50÷回転数＝枚/G」を内部計算</div></div>
+        <div><label>通常時時速（G/時）</label><input id="speedGph" type="number" step="10" value="800" /><div class="muted">※非等価の時給算出用（目安：800）</div></div>
+      <div><label>TY（平均獲得枚数）</label><input id="ty" type="number" step="1" value="500" /><div class="muted">※当選時の平均獲得枚数（枚）</div></div>
+    </div>
+
+    <div class="row2">
+      <div><label>純増（枚/G）</label><input id="junzo" type="number" step="0.01" value="2.0" /><div class="muted">※機械割算出用（AT/ART中の純増）</div></div>
+      <div><label>直撃確率（1/◯◯）</label><input id="directDenom" type="number" step="1" value="0" /><div class="muted">※0なら無視（暫定：通常時G中の独立当選として近似）</div></div>
+    </div>
+
+    <details class="card" style="margin-top:14px; padding:14px;">
+      <summary><b>詳細（機械割の投入推定など）</b></summary>
+      <div class="row2" style="margin-top:12px;">
+        <div><label>AT中BET（枚/G）</label><input id="betPerG" type="number" step="0.1" value="3" /><div class="muted">※通常は3枚。機械割の投入枚数推定に使用</div></div>
+        <div><label>メモ</label><div class="muted">※AT消化G＝TY÷純増（近似）。期待投入＝通常投資＋（当選時AT投入）</div></div>
+      </div>
+    </details>
+
+    <!-- 前兆（1行） -->
+    <div class="row3" style="margin-top:14px;">
+      <div>
+        <label>前兆タイプ</label>
+        <select id="preType">
+          <option value="after" selected>後前兆（規定pt到達→前兆）</option>
+          <option value="before">前前兆（規定pt前から前兆）</option>
+        </select>
+        <div class="muted">※前前兆は「pt起点＋前兆G」で当選Gを下限固定（近似）</div>
+      </div>
+      <div><label>前兆G数</label><input id="preG" type="number" step="1" value="30" /><div class="muted">※任意で設定</div></div>
+      <div>
+        <label>前兆起点の規定pt</label>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <input id="prePtMin" type="number" step="1" value="96" style="flex:1" placeholder="下限" />
+          <input id="prePtMax" type="number" step="1" value="96" style="flex:1" placeholder="上限" />
+          <select id="prePtPick" style="flex:1;">
+            <option value="median" selected>中央値</option>
+            <option value="min">下限値</option>
+            <option value="max">上限値</option>
+          </select>
+        </div>
+        <div class="muted">※例：64〜128なら 下限64 / 中央値96 / 上限128</div>
+      </div>
+    </div>
+
+    <!-- 最終行 -->
+    <div class="row3" style="margin-top:14px;">
+      <div>
+        <label>累計スルー回数</label>
+        <input id="throughCount" type="number" step="1" min="0" value="0" />
+        <div class="muted">※CZ当選→失敗の回数（0=補正なし）</div>
+      </div>
+      <div><label>開始周期</label><select id="startCycle">
+  <option value="1">1周期目</option>
+  <option value="2">2周期目</option>
+  <option value="3">3周期目</option>
+  <option value="4">4周期目</option>
+  <option value="5">5周期目</option>
+  <option value="6">6周期目</option>
+  <option value="7">7周期目</option>
+  <option value="8">8周期目</option>
+  <option value="9">9周期目</option>
+  <option value="10">10周期目</option>
+</select></div>
+      <div><label>開始pt（現在pt）</label><input id="startPt" type="number" step="1" value="0" /><div class="muted">※その時点までに溜まっているpt</div></div>
+      
+    <div class="row3" style="margin-top:10px;">
+      <div>
+        <label>貸出枚数（1k）</label>
+        <input id="lendCoinsPer1k" type="number" step="1" value="50" />
+        <div class="muted">※1000円で借りる枚数（例：46枚貸し→46）</div>
+      </div>
+      <div>
+        <label>交換枚数（1k）</label>
+        <input id="exchCoinsPer1k" type="number" step="1" value="50" />
+        <div class="muted">※1000円に交換する枚数（例：56枚交換→56）</div>
+      </div>
+      <div>
+        <label>持ちメダル（開始時・枚）</label>
+        <input id="holdCoins" type="number" step="1" value="0" />
+        <div class="muted">※消費は持ちメダル優先（平均投資に対して近似）</div>
+      </div>
+    </div>
+
+<div>
+        <label>計算</label>
+        <div class="btns">
+          <button type="button" id="btnCalc">期待値を計算</button>
+          <button type="button" id="btnCalcAndSave">計算→プリセット上書き保存</button>
+        </div>
+      </div>
+    </div>
+<div class="hr"></div>
+    <div class="kpi kpi-emph">
+      <div class="box"><div class="muted">期待値（枚）</div><div class="v" id="kpiEV">-</div></div>
+      <div class="box"><div class="muted">期待投資（枚）</div><div class="v" id="kpiInvest">-</div></div>
+      <div class="box"><div class="muted">当選確率（開始周期以降）</div><div class="v" id="kpiHit">-</div></div>
+      <div class="box"><div class="muted">平均当選周期</div><div class="v" id="kpiAvgCycle">-</div></div>
+      <div class="box"><div class="muted">機械割/時給</div><div class="v" id="kpiMachine">-</div></div>
+    </div>
+    
+    <div class="muted" style="margin-top:8px;font-size:12px;">
+      ※本ツールは実戦判断を目的とした近似モデルです。機種ごとの内部仕様（前兆・当選契機・モード移行条件など）を完全再現するものではありません。表示される期待値・機械割は参考値としてご利用ください。
+    </div>
+
+<div id="calcMsg" class="muted" style="margin-top:8px"></div>
+  </div>
+
+  <div class="card" id="editorCard">
+    <h2>データ入力（手入力・コピペ）</h2>
+
+    <div class="row3">
+      <div>
+        <label>表タイプ</label>
+        <select id="tableType">
+          <option value="modeDist">モード（初期分布）</option>
+          <option value="ptDist">周期pt分布</option>
+          <option value="cycleDist">周期当選分布</option>
+          <option value="modeTrans">モード移行率</option>
+          <option value="raw">生データ（非推奨）</option>
+        </select>
+      </div>
+      <div>
+        <label>条件名（保存キー）</label>
+        <input id="contextName" placeholder="例：設定変更時・AT後 / 1周期目 / 天井周期の振り分け など" />
+        <div class="muted" style="margin-top:6px">保存済みから読み込む：</div>
+        <div class="row2 contextRow" style="margin-top:6px">
+          <select id="contextSelect"></select>
+          <div class="btns" style="justify-content:flex-end">
+            <button type="button" id="loadContext">読み込み</button>
+            <button type="button" id="renameContext">名前変更</button>
+            <button type="button" id="deleteContext">削除</button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <label>表テンプレ</label>
+        <div class="btns">
+          <button type="button" id="loadDefaultForType">デフォルトを読み込む</button>
+          <button type="button" id="saveContextQuick">保存（適用）</button>
+          <button type="button" id="clearTbl">クリア</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="btns" style="margin-top:10px">
+      <span id="clickStatus" class="muted"></span>
+      <button type="button" id="addRow">行＋</button>
+      <button type="button" id="addCol">列＋</button>
+      <button type="button" id="delRow">行−</button>
+      <button type="button" id="delCol">列−</button>
+      <button type="button" id="applyTable">この表を適用</button>
+      <button type="button" id="checkSums">合計チェック</button>
+    </div>
+
+    <div id="tableBox" style="margin-top:10px"></div>
+    <div id="applyMsg" class="muted" style="margin-top:8px"></div>
+  </div>
+</div>
+
+<script>
+
+(() => {
+  const DEFAULT_DATA = {"meta": {"updatedAt": "2026-02-08", "note": "内蔵テンプレは検算・入力省力化向け（等価前提）。数値は公開解析表を元にしていますが、機種/状態/設定/前提で変わるので適宜上書きしてください。"}, "modeDist": {"VVV2：設定変更時・革命ボーナス後・AT後（設定1）": {"通常A": 0.69, "通常B": 0.25, "通常C": 0.05, "天国": 0.01}, "東リベ：モード選択率（設定1）": {"モードA": 0.554, "モードB": 0.124, "チャンス": 0.169, "天国": 0.121, "特殊": 0.032}}, "modeTrans": {"VVV2：CZ失敗後・決戦ボーナス後": {"fromModes": ["通常A", "通常B", "通常C", "天国"], "toModes": ["通常A", "通常B", "通常C", "天国"], "mat": [[0.66, 0.29, 0.04, 0.01], [0.0, 0.66, 0.32, 0.02], [0.0, 0.0, 0.57, 0.43], [0.66, 0.31, 0.02, 0.01]]}}, "ptDist": {"VVV2：1周期目 規定pt分布": {"通常A": [{"range": "100pt", "min": 100, "max": 100, "p": 0.05}, {"range": "200pt", "min": 200, "max": 200, "p": 0.95}], "通常B": [{"range": "100pt", "min": 100, "max": 100, "p": 0.05}, {"range": "200pt", "min": 200, "max": 200, "p": 0.95}], "通常C": [{"range": "100pt", "min": 100, "max": 100, "p": 0.1}, {"range": "200pt", "min": 200, "max": 200, "p": 0.9}], "天国": [{"range": "100pt", "min": 100, "max": 100, "p": 0.05}, {"range": "200pt", "min": 200, "max": 200, "p": 0.95}]}, "VVV2：2〜6周期 規定pt分布（前回600pt以外）": {"通常A": [{"range": "100pt", "min": 100, "max": 100, "p": 0.25}, {"range": "200pt", "min": 200, "max": 200, "p": 0.23}, {"range": "300pt", "min": 300, "max": 300, "p": 0.05}, {"range": "400pt", "min": 400, "max": 400, "p": 0.28}, {"range": "500pt", "min": 500, "max": 500, "p": 0.04}, {"range": "600pt", "min": 600, "max": 600, "p": 0.15}], "通常B": [{"range": "100pt", "min": 100, "max": 100, "p": 0.29}, {"range": "200pt", "min": 200, "max": 200, "p": 0.13}, {"range": "300pt", "min": 300, "max": 300, "p": 0.16}, {"range": "400pt", "min": 400, "max": 400, "p": 0.12}, {"range": "500pt", "min": 500, "max": 500, "p": 0.14}, {"range": "600pt", "min": 600, "max": 600, "p": 0.16}], "通常C": [{"range": "100pt", "min": 100, "max": 100, "p": 0.35}, {"range": "200pt", "min": 200, "max": 200, "p": 0.44}, {"range": "300pt", "min": 300, "max": 300, "p": 0.03}, {"range": "400pt", "min": 400, "max": 400, "p": 0.18}]}, "VVV2：2〜6周期 規定pt分布（前回600pt or 特殊テーブル）": {"通常A": [{"range": "100pt", "min": 100, "max": 100, "p": 0.16}, {"range": "200pt", "min": 200, "max": 200, "p": 0.31}, {"range": "300pt", "min": 300, "max": 300, "p": 0.06}, {"range": "400pt", "min": 400, "max": 400, "p": 0.47}], "通常B": [{"range": "100pt", "min": 100, "max": 100, "p": 0.2}, {"range": "200pt", "min": 200, "max": 200, "p": 0.32}, {"range": "300pt", "min": 300, "max": 300, "p": 0.31}, {"range": "400pt", "min": 400, "max": 400, "p": 0.17}], "通常C": [{"range": "100pt", "min": 100, "max": 100, "p": 0.38}, {"range": "200pt", "min": 200, "max": 200, "p": 0.39}, {"range": "300pt", "min": 300, "max": 300, "p": 0.03}, {"range": "400pt", "min": 400, "max": 400, "p": 0.2}]}, "東リベ：1周期目 規定pt分布（通常時・全モード共通）": {"共通": [{"range": "100pt", "min": 100, "max": 100, "p": 0.125}, {"range": "200pt", "min": 200, "max": 200, "p": 0.875}]}, "東リベ：2周期目以降 規定pt分布（通常時）": {"モードA": [{"range": "100pt", "min": 100, "max": 100, "p": 0.098}, {"range": "200pt", "min": 200, "max": 200, "p": 0.031}, {"range": "300pt", "min": 300, "max": 300, "p": 0.43}, {"range": "400pt", "min": 400, "max": 400, "p": 0.031}, {"range": "500pt", "min": 500, "max": 500, "p": 0.41}], "モードB": [{"range": "100pt", "min": 100, "max": 100, "p": 0.06293706293706294}, {"range": "200pt", "min": 200, "max": 200, "p": 0.2497502497502498}, {"range": "300pt", "min": 300, "max": 300, "p": 0.6873126873126874}], "チャンス": [{"range": "100pt", "min": 100, "max": 100, "p": 0.098}, {"range": "200pt", "min": 200, "max": 200, "p": 0.031}, {"range": "300pt", "min": 300, "max": 300, "p": 0.344}, {"range": "400pt", "min": 400, "max": 400, "p": 0.031}, {"range": "500pt", "min": 500, "max": 500, "p": 0.496}], "特殊": [{"range": "100pt", "min": 100, "max": 100, "p": 0.15615615615615616}, {"range": "200pt", "min": 200, "max": 200, "p": 0.15615615615615616}, {"range": "300pt", "min": 300, "max": 300, "p": 0.15615615615615616}, {"range": "400pt", "min": 400, "max": 400, "p": 0.15615615615615616}, {"range": "500pt", "min": 500, "max": 500, "p": 0.37537537537537535}], "天国": [{"range": "100pt", "min": 100, "max": 100, "p": 0.125}, {"range": "200pt", "min": 200, "max": 200, "p": 0.875}]}}, "hitRate": {"VVV2：天井周期の振り分け（設定1）": {"通常A": [{"key": "1周期目", "p": 0.14285714285714288}, {"key": "2周期目", "p": 0.29591836734693877}, {"key": "3周期目", "p": 0.04081632653061225}, {"key": "4周期目", "p": 0.15306122448979592}, {"key": "5周期目", "p": 0.1326530612244898}, {"key": "6周期目", "p": 0.23469387755102042}], "通常B": [{"key": "1周期目", "p": 0.05}, {"key": "2周期目", "p": 0.13}, {"key": "3周期目", "p": 0.82}], "通常C": [{"key": "1周期目", "p": 0.11}, {"key": "2周期目", "p": 0.18}, {"key": "3周期目", "p": 0.14}, {"key": "4周期目", "p": 0.12}, {"key": "5周期目", "p": 0.45}], "天国": [{"key": "1周期目", "p": 1.0}]}, "東リベ：当選周期分布（設定1・推定/当選率→分布化）": {"モードA": [{"key": "1周期目", "p": 0.344}, {"key": "2周期目", "p": 0.115456}, {"key": "3周期目", "p": 0.158379392}, {"key": "4周期目", "p": 0.095541152}, {"key": "5周期目", "p": 0.095158987392}, {"key": "6周期目", "p": 0.191464468608}], "モードB": [{"key": "1周期目", "p": 0.09800000000000002}, {"key": "2周期目", "p": 0.18310600000000002}, {"key": "3周期目", "p": 0.37598156200000005}, {"key": "4周期目", "p": 0.08572810950000001}, {"key": "5周期目", "p": 0.08538519706200001}, {"key": "6周期目", "p": 0.17179913143800002}], "チャンス": [{"key": "1周期目", "p": 0.074}, {"key": "2周期目", "p": 0.318544}, {"key": "3周期目", "p": 0.607456}], "天国": [{"key": "1周期目", "p": 1.0}], "特殊": [{"key": "1周期目", "p": 0.25}, {"key": "2周期目", "p": 0.132}, {"key": "3周期目", "p": 0.212592}, {"key": "4周期目", "p": 0.101352}, {"key": "5周期目", "p": 0.053513856}, {"key": "6周期目", "p": 0.250542144}]}}};
+  let dataModel = JSON.parse(JSON.stringify(DEFAULT_DATA));
+
+  // --- Tables persistence (modeDist/ptDist/cycleDist/modeTrans) ---
+  const LS_TABLES_KEY = "ev_tool_tables_v1_NEFIX20260209B";
+  function loadAllTables(){
+    try { return JSON.parse(localStorage.getItem(LS_TABLES_KEY) || "{}"); } catch { return {}; }
+  }
+  function saveAllTables(obj){ localStorage.setItem(LS_TABLES_KEY, JSON.stringify(obj)); }
+  function mergeTablesIntoModel(tables){
+    // 安全策：内蔵テーブル（DEFAULT_DATAに存在するキー）は上書きしない。
+    // これにより「同名で保存したカスタム」が内蔵テンプレを壊す事故を防ぎます。
+    const types = ["modeDist","ptDist","cycleDist","modeTrans"];
+    types.forEach(t=>{
+      if(!tables[t]) return;
+      dataModel[t] = dataModel[t] || {};
+      const builtin = (DEFAULT_DATA && DEFAULT_DATA[t]) ? DEFAULT_DATA[t] : {};
+      Object.keys(tables[t]).forEach(k=>{
+        if(Object.prototype.hasOwnProperty.call(builtin, k)) return; // built-inは優先
+        dataModel[t][k] = tables[t][k];
+      });
+    });
+  }
+  mergeTablesIntoModel(loadAllTables());
+
+
+  // Show banner (proves JS is running)
+  const banner = document.getElementById("jsBanner");
+  if (banner) { banner.style.display = "block"; }
+
+  function updateJsonView(){
+    dataModel.meta = dataModel.meta || {};
+    dataModel.meta.updatedAt = new Date().toISOString();
+    const dj=document.getElementById("dataJson");
+    if(dj) dj.value = JSON.stringify(dataModel, null, 2);
+  }
+  const _defJ=document.getElementById("defaultJson");
+  if(_defJ) _defJ.value = JSON.stringify(DEFAULT_DATA, null, 2);
+updateJsonView();
+
+  /** Presets */
+  const LS_KEY = "ev_tool_presets_v1";
+  function loadAllPresets(){ try { return JSON.parse(localStorage.getItem(LS_KEY) || "{}"); } catch { return {}; } }
+  function saveAllPresets(obj){ localStorage.setItem(LS_KEY, JSON.stringify(obj)); }
+  function refreshPresetSelect(){
+    const sel=document.getElementById("presetSelect");
+    if(!sel) return;
+    const presets=loadAllPresets();
+    const keys=Object.keys(presets).sort((a,b)=>a.localeCompare(b,'ja'));
+    sel.innerHTML="";
+    const opt0=document.createElement("option"); opt0.value=""; opt0.textContent="—選択—"; sel.appendChild(opt0);
+    keys.forEach(k=>{ const o=document.createElement("option"); o.value=k; o.textContent=k; sel.appendChild(o); });
+  }
+  function msg(el,text){ if(!el) return; el.textContent=text; clearTimeout(el._t); el._t=setTimeout(()=>{el.textContent="";}, 3500); }
+  refreshPresetSelect();
+
+  document.getElementById("savePreset")?.addEventListener("click", ()=>{
+    const name=document.getElementById("presetName").value.trim();
+    if(!name) return msg(document.getElementById("presetMsg"), "プリセット名を入れてね");
+    const presets=loadAllPresets(); presets[name]=dataModel; saveAllPresets(presets); refreshPresetSelect();
+    msg(document.getElementById("presetMsg"), `保存しました：${name}`);
+  });
+  document.getElementById("loadPreset")?.addEventListener("click", ()=>{
+    const k=document.getElementById("presetSelect").value;
+    if(!k) return msg(document.getElementById("presetMsg"), "読み込むプリセットを選んでね");
+    const presets=loadAllPresets(); if(!presets[k]) return msg(document.getElementById("presetMsg"), "見つかりませんでした");
+    dataModel=presets[k]; updateJsonView();
+    document.getElementById("presetName").value=k;
+    refreshCalcSelectors();
+    msg(document.getElementById("presetMsg"), `読み込みました：${k}`);
+  });
+  document.getElementById("deletePreset")?.addEventListener("click", ()=>{
+    const k=document.getElementById("presetSelect").value;
+    if(!k) return msg(document.getElementById("presetMsg"), "削除するプリセットを選んでね");
+    const presets=loadAllPresets(); if(!presets[k]) return msg(document.getElementById("presetMsg"), "見つかりませんでした");
+    if(!confirm(`削除しますか？\n${k}`)) return;
+    delete presets[k]; saveAllPresets(presets); refreshPresetSelect();
+    msg(document.getElementById("presetMsg"), `削除しました：${k}`);
+  });
+  document.getElementById("exportPreset")?.addEventListener("click", ()=>{
+    const name=document.getElementById("presetName").value.trim() || "preset";
+    const blob=new Blob([JSON.stringify(dataModel,null,2)],{type:"application/json"});
+    const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=`${name}.json`; a.click();
+    URL.revokeObjectURL(a.href);
+    msg(document.getElementById("presetMsg"), "JSONを書き出しました");
+  });
+  document.getElementById("importPresetBtn")?.addEventListener("click", ()=> document.getElementById("importFile")?.click());
+  document.getElementById("importFile")?.addEventListener("change", async (e)=>{
+    const f=e.target.files?.[0]; if(!f) return;
+    try{ const obj=JSON.parse(await f.text()); dataModel=obj; updateJsonView(); refreshCalcSelectors(); persistTables(); refreshContextSelect(); msg(document.getElementById("presetMsg"), "インポートしました（必要なら名前を付けて保存）"); }
+    catch{ alert("インポート失敗：JSON形式を確認してね"); }
+    finally{ e.target.value=""; }
+  });
+
+  /** Editable table (v4.9: always-initialized, single source of truth) */
+  const state = {
+    tbl: { data: [[""]] },
+  };
+  const tableBox=document.getElementById("tableBox");
+
+  function esc(s){ return String(s).replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch])); }
+  function ensureRect(){
+    const cols=Math.max(1, ...state.tbl.data.map(r=>r.length));
+    state.tbl.data = state.tbl.data.map(r => r.concat(Array(cols-r.length).fill("")));
+  }
+  
+  // --- Context (table) save/load UI ---
+  function getCtxKeysForType(type){
+    const obj = (dataModel[type]||{});
+    return Object.keys(obj).sort((a,b)=>a.localeCompare(b,'ja'));
+  }
+  function refreshContextSelect(){
+    const type = document.getElementById("tableType")?.value;
+    const sel = document.getElementById("contextSelect");
+    if(!sel || !type) return;
+    const keys = getCtxKeysForType(type);
+    sel.innerHTML = "";
+    if(keys.length===0){
+      const op=document.createElement("option");
+      op.value=""; op.textContent="（保存済みなし）";
+      sel.appendChild(op);
+      return;
+    }
+    keys.forEach(k=>{
+      const op=document.createElement("option");
+      op.value=k; op.textContent=k;
+      sel.appendChild(op);
+    });
+    // keep current contextName if exists
+    const cn = document.getElementById("contextName")?.value?.trim();
+    if(cn && keys.includes(cn)) sel.value = cn;
+  }
+
+  function gridFromContext(type, ctxName){
+    if(type==="modeDist"){
+      const dist = (dataModel.modeDist||{})[ctxName] || {};
+      return [["モード","割合"], ...Object.keys(dist).map(k=>[k, Math.round(dist[k]*100)+"%"])];
+    }
+    if(type==="cycleDist"){
+      // minimal model: mode x cycle hit-rate table (stores matrix-like object in dataModel.cycleDist[ctxName])
+      const cd = (dataModel.cycleDist||{})[ctxName];
+      if(!cd) return [[""]];
+      if(cd.modes && cd.cycles && cd.matrix){
+        const header=["", ...cd.cycles];
+        const rows = cd.modes.map(m=>[m, ...(cd.cycles.map(c=>Math.round((cd.matrix[m]?.[c]||0)*100)+"%"))]);
+        return [header, ...rows];
+      }
+      return [[""]];
+    }
+    if(type==="ptDist"){
+      // ptDist[ctxName][mode]=[{range,min,max,p}]
+      const pd = (dataModel.ptDist||{})[ctxName];
+      if(!pd) return [[""]];
+      const modes = Object.keys(pd);
+      // flatten as: mode | range | p
+      const out=[["モード","規定pt（例:64-128）","割合"]];
+      modes.forEach(m=>{
+        (pd[m]||[]).forEach(row=>{
+          out.push([m, row.range||(`${row.min}-${row.max}`), Math.round((row.p||0)*100)+"%"]);
+        });
+      });
+      return out;
+    }
+    if(type==="modeTrans"){
+      const mt = (dataModel.modeTrans||{})[ctxName];
+      if(!mt) return [[""]];
+      const toModes = mt.toModes || [];
+      const header=["", ...toModes.map(m=>"→"+m)];
+      const rows = (mt.fromModes||[]).map(f=>{
+        const line=[f];
+        toModes.forEach(t=>{
+          let v = (mt.matrix?.[f]?.[t])||0;
+          if(!mt.matrix && Array.isArray(mt.mat)){
+            const i=(mt.fromModes||[]).indexOf(f);
+            const j=(mt.toModes||[]).indexOf(t);
+            if(i>=0 && j>=0 && mt.mat[i] && mt.mat[i][j]!=null) v = mt.mat[i][j];
+          }
+          line.push(Math.round((v||0)*100)+"%");
+        });
+        return line;
+      });
+      return [header, ...rows];
+    }
+    // raw
+    const any = (dataModel[type]||{})[ctxName];
+    return [["JSON"], [JSON.stringify(any)]];
+  }
+
+  function loadContextIntoEditor(){
+    const type = document.getElementById("tableType").value;
+    const sel = document.getElementById("contextSelect");
+    const ctxName = (sel?.value || "").trim();
+    if(!ctxName) return setMsg("applyMsg", "保存済みがありません。");
+    document.getElementById("contextName").value = ctxName;
+    state.tbl.data = gridFromContext(type, ctxName);
+    renderTable();
+    setMsg("applyMsg", `読み込み：${ctxName}`);
+  }
+
+  function persistTables(){
+    const payload = {
+      modeDist: dataModel.modeDist||{},
+      ptDist: dataModel.ptDist||{},
+      cycleDist: dataModel.cycleDist||{},
+      modeTrans: dataModel.modeTrans||{},
+    };
+    saveAllTables(payload);
+  }
+
+  function renameContext(){
+    const type = document.getElementById("tableType").value;
+    const sel = document.getElementById("contextSelect");
+    const from = (sel?.value || "").trim();
+    const to = (document.getElementById("contextName").value || "").trim();
+    if(!from) return setMsg("applyMsg","名前変更したい保存済みを選んでね。");
+    if(!to) return setMsg("applyMsg","新しい名前（条件名）を入力してね。");
+    if(from===to) return setMsg("applyMsg","同じ名前です。");
+    dataModel[type] = dataModel[type] || {};
+    if(dataModel[type][to]) return setMsg("applyMsg","その名前は既に存在します。");
+    dataModel[type][to] = dataModel[type][from];
+    delete dataModel[type][from];
+    persistTables();
+    updateJsonView(); refreshCalcSelectors(); persistTables(); refreshContextSelect(); refreshContextSelect();
+    setMsg("applyMsg", `名前変更：${from} → ${to}`);
+  }
+
+  function deleteContext(){
+    const type = document.getElementById("tableType").value;
+    const sel = document.getElementById("contextSelect");
+    const key = (sel?.value || "").trim();
+    if(!key) return setMsg("applyMsg","削除したい保存済みを選んでね。");
+    if(!confirm(`「${key}」を削除しますか？`)) return;
+    if(dataModel[type] && dataModel[type][key]){
+      delete dataModel[type][key];
+      persistTables();
+      updateJsonView(); refreshCalcSelectors(); persistTables(); refreshContextSelect(); refreshContextSelect();
+      setMsg("applyMsg", `削除：${key}`);
+    }
+  }
+
+function renderTable(){
+    ensureRect();
+    const rows=state.tbl.data.length;
+    const cols=state.tbl.data[0]?.length||0;
+    if(rows===0||cols===0){ tableBox.innerHTML = `<div class="muted">テーブルが空です</div>`; return; }
+    let html = `<div class="muted">行:${rows} / 列:${cols}</div>`;
+    html += `<table><thead><tr>`;
+    for(let c=0;c<cols;c++) html += `<th>c${c+1}</th>`;
+    html += `</tr></thead><tbody>`;
+    for(let r=0;r<rows;r++){ html += `<tr>`;
+      for(let c=0;c<cols;c++){ const v=state.tbl.data[r][c] ?? ""; html += `<td><input class="cell-inp" data-r="${r}" data-c="${c}" value="${esc(v)}" /></td>`; }
+      html += `</tr>`;
+    }
+    html += `</tbody></table>`;
+    tableBox.innerHTML = html;
+  }
+
+  // Input event delegation (always works)
+  tableBox.addEventListener("input", (e)=>{
+    const t=e.target;
+    if(!(t instanceof HTMLInputElement)) return;
+    const r = parseInt(t.dataset.r||"-1",10);
+    const c = parseInt(t.dataset.c||"-1",10);
+    if(r>=0 && c>=0) {
+      if(!state.tbl.data[r]) return;
+      state.tbl.data[r][c]=t.value;
+    }
+  });
+
+  function setStatus(text){
+    const cs=document.getElementById("clickStatus");
+    if(!cs) return;
+    cs.textContent = text;
+    clearTimeout(cs._t);
+    cs._t=setTimeout(()=>{cs.textContent="";}, 2500);
+  }
+
+  // Button click delegation (guaranteed)
+  document.getElementById("editorCard").addEventListener("click", (e)=>{
+    const t=e.target;
+    if(!(t instanceof HTMLElement)) return;
+    const id=t.id;
+    if(!id) return;
+
+    const cols = (state.tbl.data[0]?.length||1);
+    if(id==="addRow"){ state.tbl.data.push(Array(cols).fill("")); renderTable(); setStatus(`反映: 行＋（行${state.tbl.data.length}/列${cols}）`); }
+    else if(id==="addCol"){ state.tbl.data.forEach(r=>r.push("")); renderTable(); setStatus(`反映: 列＋（行${state.tbl.data.length}/列${cols+1}）`); }
+    else if(id==="delRow"){ if(state.tbl.data.length>1) state.tbl.data.pop(); renderTable(); setStatus(`反映: 行−（行${state.tbl.data.length}/列${(state.tbl.data[0]?.length||1)}）`); }
+    else if(id==="delCol"){ if((state.tbl.data[0]?.length||0)>1) state.tbl.data.forEach(r=>r.pop()); renderTable(); setStatus(`反映: 列−（行${state.tbl.data.length}/列${(state.tbl.data[0]?.length||1)}）`); }
+    else if(id==="clearTbl"){ state.tbl.data=[[""]]; renderTable(); setStatus("反映: クリア"); }
+  });
+
+  // クリックの取りこぼし対策：個別にリスナーも付ける（環境によっては親DIVの委譲クリックが効かない場合がある）
+  ["addRow","addCol","delRow","delCol"].forEach((btnId)=>{
+    const el=document.getElementById(btnId);
+    if(!el) return;
+    el.addEventListener("click", (ev)=>{
+      ev.preventDefault();
+      // 既存の委譲ロジックをそのまま再現
+      const cols = (state.tbl.data && state.tbl.data[0]) ? state.tbl.data[0].length : 1;
+      if(btnId==="addRow"){
+        state.tbl.data.push(Array(cols).fill(""));
+        renderTable(); return;
+      }
+      if(btnId==="addCol"){
+        state.tbl.data = state.tbl.data.map(r => r.concat([""]));
+        renderTable(); return;
+      }
+      if(btnId==="delRow"){
+        if(state.tbl.data.length<=1) return;
+        state.tbl.data.pop();
+        renderTable(); return;
+      }
+      if(btnId==="delCol"){
+        if(cols<=1) return;
+        state.tbl.data = state.tbl.data.map(r => r.slice(0, -1));
+        renderTable(); return;
+      }
+    });
+  });
+
+  /** Parsing helpers */
+  function norm(t){ return String(t||"").replace(/[％]/g,'%').replace(/[０-９]/g, s=>String.fromCharCode(s.charCodeAt(0)-0xFEE0)).trim(); }
+  function parsePercent(s){
+    s = norm(s);
+    if(!s) return null;
+    const hasPct = s.includes("%");
+    s = s.replace(/%/g,"");
+    const v = parseFloat(s);
+    if(!isFinite(v)) return null;
+    return hasPct ? v/100 : (v>1 ? v/100 : v);
+  }
+  function parsePointLabel(s){
+    s = norm(s);
+    const m = s.match(/(\d+)/);
+    if(m) return parseInt(m[1],10);
+    return null;
+  }
+
+  function parsePtRangeLabel(s){
+    s = norm(s);
+    if(!s) return null;
+    // accept: "64-128", "64～128", "64〜128", "64- 128pt"
+    const m = s.match(/(\d+)\s*[-〜～]\s*(\d+)/);
+    if(m){
+      const a=parseInt(m[1],10), b=parseInt(m[2],10);
+      const mn=Math.min(a,b), mx=Math.max(a,b);
+      return {min:mn, max:mx, label:`${mn}-${mx}pt`};
+    }
+    const n = parsePointLabel(s);
+    if(n!=null) return {min:n, max:n, label:`${n}pt`};
+    return null;
+  }
+  function pickRangePt(rangeObj, pick){
+    if(!rangeObj) return 0;
+    const mn=+rangeObj.min||0, mx=+rangeObj.max||0;
+    if(pick==="min") return mn;
+    if(pick==="max") return mx;
+    return (mn+mx)/2; // 中央値（例: 64〜128 → 96）
+  }
+
+  function isDash(s){ return /^[-–—ー]+$/.test(norm(s)); }
+  function getKeys(obj){ return obj ? Object.keys(obj) : []; }
+
+  /** Defaults -> table */
+  function loadDefaultForType(){
+    const type=document.getElementById("tableType").value;
+    let grid=[[""]];
+    if(type==="modeDist"){
+      let ctxName = document.getElementById("contextName").value.trim();
+      const all = getKeys(DEFAULT_DATA.modeDist);
+      if(!ctxName || !DEFAULT_DATA.modeDist[ctxName]) ctxName = all[0] || "default";
+      document.getElementById("contextName").value = ctxName;
+      const dist = DEFAULT_DATA.modeDist[ctxName] || {};
+      grid = [["モード","割合"], ...Object.keys(dist).map(k=>[k, Math.round(dist[k]*100)+"%"])];
+    } else if(type==="modeTrans"){
+      let ctxName = document.getElementById("contextName").value.trim();
+      const all = getKeys(DEFAULT_DATA.modeTrans||{});
+      if(!ctxName || !(DEFAULT_DATA.modeTrans||{})[ctxName]) ctxName = all[0] || "default";
+      document.getElementById("contextName").value = ctxName;
+      const mt = (DEFAULT_DATA.modeTrans||{})[ctxName];
+      if(mt){
+        const modes = mt.toModes;
+        grid = [["滞在モード", ...modes.map(m=>"→"+m)]];
+        for(const from of mt.fromModes){
+          const row=[from+"→"];
+          for(const to of modes){
+            let v = 0;
+            if(mt.matrix && mt.matrix[from] && mt.matrix[from][to]!=null) v = mt.matrix[from][to];
+            else if(Array.isArray(mt.mat)){
+              const i = (mt.fromModes||[]).indexOf(from);
+              const j = (mt.toModes||[]).indexOf(to);
+              if(i>=0 && j>=0 && mt.mat[i] && mt.mat[i][j]!=null) v = mt.mat[i][j];
+            }
+            row.push(Math.round((v||0)*100)+"%");
+          }
+          grid.push(row);
+        }
+      } else {
+        grid=[["滞在モード","→通常A","→通常B","→通常C","→天国"],["通常A→","66%","29%","4%","1%"]];
+      }
+    } else if(type==="cycleDist"){
+      let ctxName = document.getElementById("contextName").value.trim();
+      const all = getKeys(DEFAULT_DATA.hitRate);
+      if(!ctxName || !DEFAULT_DATA.hitRate[ctxName]) ctxName = all[0] || "default";
+      document.getElementById("contextName").value = ctxName;
+      const hr = DEFAULT_DATA.hitRate[ctxName] || {};
+      const modes = Object.keys(hr);
+      const keys = ["1周期目","2周期目","3周期目","4周期目","5周期目","6周期目"];
+      grid = [["周期", ...modes]];
+      for(const k of keys){
+        const row=[k];
+        for(const mode of modes){
+          const item = (hr[mode]||[]).find(x=>x.key===k);
+          row.push(item ? Math.round(item.p*100)+"%" : "-");
+        }
+        grid.push(row);
+      }
+    } else if(type==="ptDist"){
+      let ctxName = document.getElementById("contextName").value.trim();
+      const all = getKeys(DEFAULT_DATA.ptDist);
+      if(!ctxName || !DEFAULT_DATA.ptDist[ctxName]) ctxName = all[0] || "default";
+      document.getElementById("contextName").value = ctxName;
+      const pd = DEFAULT_DATA.ptDist[ctxName] || {};
+      const modes = Object.keys(pd);
+      const points = Array.from(new Set(modes.flatMap(m=> (pd[m]||[]).map(x=>x.range || (x.min+"pt")))));
+      grid = [["ポイント", ...modes]];
+      for(const p of points){
+        const row=[p];
+        for(const mode of modes){
+          const item = (pd[mode]||[]).find(x=>(x.range||((x.min||0)+"pt"))===p);
+          row.push(item ? Math.round(item.p*100)+"%" : "-");
+        }
+        grid.push(row);
+      }
+    } else {
+      document.getElementById("contextName").value = "";
+      grid = [["貼り付け"],["ここに"]];
+    }
+    state.tbl.data = grid;
+    renderTable();
+    msg(document.getElementById("applyMsg"), "デフォルトを表に展開しました（必要なら修正して適用）");
+  }
+  document.getElementById("loadDefaultForType").addEventListener("click", (e)=>{ e.preventDefault(); loadDefaultForType(); });
+
+  document.getElementById("loadContext").addEventListener("click",(e)=>{e.preventDefault(); loadContextIntoEditor();});
+  document.getElementById("renameContext").addEventListener("click",(e)=>{e.preventDefault(); renameContext();});
+  document.getElementById("deleteContext").addEventListener("click",(e)=>{e.preventDefault(); deleteContext();});
+  document.getElementById("saveContextQuick").addEventListener("click",(e)=>{e.preventDefault(); const msg=applyTable(); if(msg) setMsg("applyMsg", msg); persistTables(); refreshContextSelect();});
+  document.getElementById("tableType").addEventListener("change", ()=>{ refreshContextSelect(); });
+  document.getElementById("contextName").addEventListener("change", ()=>{ refreshContextSelect(); });
+
+  /** Apply table -> dataModel */
+  function applyTable(){
+    const type=document.getElementById("tableType").value;
+    const ctxName=document.getElementById("contextName").value.trim() || "default";
+    const A=state.tbl.data.map(r=>r.map(c=>norm(c)));
+
+    if(type==="modeDist"){
+      const dist={};
+      for(let i=0;i<A.length;i++){ 
+        const mode=A[i][0];
+        const p=parsePercent(A[i][1]);
+        if(!mode || p==null) continue;
+        if(/モード|割合|振り分け/.test(mode)) continue;
+        dist[mode]=p;
+      }
+      if(Object.keys(dist).length===0) return "反映できませんでした（モード名/割合列を確認してね）";
+      dataModel.modeDist[ctxName]=dist;
+      updateJsonView(); refreshCalcSelectors(); persistTables(); refreshContextSelect();
+      return `モード（初期分布）として反映：${ctxName}`;
+    }
+
+    if(type==="modeTrans"){
+      const header=A[0] || [];
+      const toModes = header.slice(1).map(h=>h.replace("→","").trim()).filter(Boolean);
+      const matrix={};
+      const fromModes=[];
+      for(let r=1;r<A.length;r++){ 
+        const fromRaw=A[r][0]; if(!fromRaw) continue;
+        const from=fromRaw.replace("→","").trim();
+        if(!from) continue;
+        fromModes.push(from);
+        matrix[from]={};
+        for(let c=1;c<A[r].length;c++){ 
+          const to = toModes[c-1] || `col${c}`;
+          const cell=A[r][c];
+          if(isDash(cell) || cell===""){ matrix[from][to]=0; continue; }
+          const p=parsePercent(cell);
+          if(p==null) continue;
+          matrix[from][to]=p;
+        }
+      }
+      dataModel.modeTrans = dataModel.modeTrans || {};
+      dataModel.modeTrans[ctxName]={ fromModes, toModes, matrix };
+      updateJsonView(); refreshCalcSelectors(); persistTables(); refreshContextSelect();
+      return `モード移行率として反映：${ctxName}`;
+    }
+
+    if(type==="cycleDist"){
+      const header=A[0]||[];
+      const modes=header.slice(1).filter(Boolean);
+      const out={};
+      modes.forEach(m=>out[m]=[]);
+      for(let r=1;r<A.length;r++){ 
+        const key=A[r][0]; if(!key) continue;
+        for(let c=1;c<A[r].length;c++){ 
+          const mode=modes[c-1] || `col${c}`;
+          const cell=A[r][c];
+          let p = (isDash(cell) || cell==="") ? 0 : parsePercent(cell);
+          if(p==null) continue;
+          out[mode] = out[mode] || [];
+          out[mode].push({key, p});
+        }
+      }
+      dataModel.hitRate = dataModel.hitRate || {};
+      dataModel.hitRate[ctxName]=out;
+      updateJsonView(); refreshCalcSelectors({cycleDist:ctxName});
+      return `周期当選分布として反映：${ctxName}`;
+    }
+
+    if(type==="ptDist"){
+      // 期待ptの分布（ポイント×モード別）。基本は「1行目=ヘッダ（ポイント/モード）」だが、
+      // ヘッダ無しで「100pt | 100%」のように入れても動くようにする（モード=共通扱い）。
+      let header=A[0]||[];
+      let modes=header.slice(1).filter(Boolean);
+      let startRow=1;
+
+      // ヘッダが無さそう：左上がポイントっぽく、右が割合っぽい かつ モード名が取れない
+      const looksPoint = parsePointLabel(header[0])!=null;
+      const looksPct = header.length>=2 && parsePercent(header[1])!=null;
+      const headerHasPointWord = /ポイント|規定|pt/i.test(header[0]||"");
+      const modesLookNumeric = modes.length>0 && modes.every(x=> parsePointLabel(x)!=null || parsePercent(x)!=null || /^[0-9.]+$/.test(x));
+      if((looksPoint && looksPct && (!headerHasPointWord || modesLookNumeric)) || modes.length===0){
+        modes = ["共通"];
+        startRow = 0;
+      }
+
+      const out={}; modes.forEach(m=>out[m]=[]);
+
+      for(let r=startRow;r<A.length;r++){
+        const pr=parsePtRangeLabel(A[r][0]);
+        if(!pr) continue;
+
+        if(startRow===0){
+          // 2列目を割合として読む（共通）
+          const cell=A[r][1]||"";
+          let p = (isDash(cell) || cell==="") ? 0 : parsePercent(cell);
+          if(p==null) continue;
+          out["共通"].push({range: pr.label, min: pr.min, max: pr.max, p});
+          continue;
+        }
+
+        for(let c=1;c<A[r].length;c++){
+          const mode=modes[c-1] || `col${c}`;
+          const cell=A[r][c];
+          let p = (isDash(cell) || cell==="") ? 0 : parsePercent(cell);
+          if(p==null) continue;
+          out[mode] = out[mode] || [];
+          out[mode].push({range: pr.label, min: pr.min, max: pr.max, p});
+        }
+      }
+
+      dataModel.ptDist[ctxName]=out;
+      updateJsonView(); refreshCalcSelectors(); persistTables(); refreshContextSelect();
+      return `周期pt分布として反映：${ctxName}`;
+    }
+
+    dataModel.raw = dataModel.raw || {};
+    dataModel.raw[ctxName] = { table: A };
+    updateJsonView();
+    return `生データとして反映：${ctxName}`;
+  }
+  document.getElementById("applyTable").addEventListener("click", (e)=>{ e.preventDefault(); msg(document.getElementById("applyMsg"), applyTable()); });
+
+  /** Sum check */
+  document.getElementById("checkSums").addEventListener("click", ()=>{
+    const A=state.tbl.data.map(r=>r.map(c=>norm(c)));
+    const rows=A.length, cols=A[0]?.length||0;
+    const colSum=Array(cols).fill(0), rowSum=[];
+    for(let r=0;r<rows;r++){ let s=0;
+      for(let c=0;c<cols;c++){ const p=parsePercent(A[r][c]); if(p!=null){ s+=p; colSum[c]+=p; } }
+      rowSum.push(s);
+    }
+    const fmt=(x)=> (Math.round(x*10000)/100).toFixed(2)+"%";
+    alert(
+      `行%合計（目安）: ${rowSum.map(fmt).join(" / ")}\n`+
+      `列%合計（目安）: ${colSum.map(fmt).join(" / ")}\n`+
+      `列%合計（1列目除外）: ${colSum.slice(1).map(fmt).join(" / ")}\n\n`+
+      `※分布表なら「列ごとに100%」が目安。`
+    );
+  });
+
+  /** Calc helpers */
+  function fillSelect(sel, items, preferred){
+    sel.innerHTML="";
+    const values = [];
+    items.forEach(it=>{
+      const o=document.createElement("option");
+      if(typeof it==="string"){
+        o.value=it; o.textContent=it; values.push(it);
+      } else if(it && typeof it==="object"){
+        o.value=it.value; o.textContent=it.text ?? it.value; values.push(it.value);
+      }
+      sel.appendChild(o);
+    });
+    if(preferred && values.includes(preferred)) sel.value=preferred;
+  }
+
+
+  /** Machine templates (one-click) */
+  const MACHINE_TEMPLATES = {
+  "（未選択）": null,
+  "ヴァルヴレイヴ2（設定1）": {
+    "selects": {
+      "modeDist": "VVV2：設定変更時・革命ボーナス後・AT後（設定1）",
+      "cycleDist": "VVV2：天井周期の振り分け（設定1）",
+      "pt1": "VVV2：1周期目 規定pt分布",
+      "pt2p": "VVV2：2〜6周期 規定pt分布（前回600pt以外）",
+      "ptShort": "VVV2：2〜6周期 規定pt分布（前回600pt or 特殊テーブル）"
+    },
+    "inputs": {
+      "ptPerG": 3.0,
+      "spinPer1k": 32.7,
+      "ty": 350,
+      "junzo": 5.5,
+      "directDenom": 0
+    }
+  },
+  "スマスロ東京リベンジャーズ（設定1）": {
+    "selects": {
+      "modeDist": "東リベ：モード選択率（設定1）",
+      "cycleDist": "東リベ：当選周期分布（設定1・推定/当選率→分布化）",
+      "pt1": "東リベ：1周期目 規定pt分布（通常時・全モード共通）",
+      "pt2p": "東リベ：2周期目以降 規定pt分布（通常時）"
+    },
+    "inputs": {
+      "ptPerG": 1.0,
+      "spinPer1k": 33.0,
+      "ty": 500,
+      "junzo": 2.5,
+      "directDenom": 0
+    }
+  }
+};
+
+  function initMachineTplSelect(){
+    const sel = document.getElementById("selMachineTpl");
+    if(!sel) return;
+    const items = Object.keys(MACHINE_TEMPLATES).map(k=>({value:k, text:k}));
+    fillSelect(sel, items, "（未選択）");
+  }
+
+  function applyMachineTemplate(){
+    const sel = document.getElementById("selMachineTpl");
+    if(!sel) return;
+    const key = sel.value;
+    const t = MACHINE_TEMPLATES[key];
+    if(!t) return;
+
+    refreshCalcSelectors();
+
+    const S = (t.selects||{});
+    const I = (t.inputs||{});
+
+    function setSel(id, val){
+      if(val==null) return;
+      const el = document.getElementById(id);
+      if(!el) return;
+      const opts = Array.from(el.options);
+      const v = String(val).trim();
+      // 1) exact match by value
+      let hit = opts.find(o => String(o.value).trim() === v);
+      // 2) fallback: match by text
+      if(!hit) hit = opts.find(o => (o.textContent||"").trim() === v);
+      // 3) fallback: contains (for minor label differences)
+      if(!hit) hit = opts.find(o => (o.textContent||"").includes(v)) || opts.find(o => String(o.value).includes(v));
+      if(hit){
+        el.value = hit.value;
+        el.dispatchEvent(new Event("change"));
+      }else{
+        console.warn("template select not found:", id, val);
+        const cm = document.getElementById("calcMsg");
+        if(cm) cm.textContent = `注意：テンプレ適用で「${id}」に「${v}」が見つからず、選択は変更されませんでした。`;
+      }
+    }
+    function setInp(id, val){
+      if(val==null) return;
+      const el = document.getElementById(id);
+      if(!el) return;
+      el.value = String(val);
+      el.dispatchEvent(new Event("input"));
+      el.dispatchEvent(new Event("change"));
+    }
+
+    setSel("selModeDist", S.modeDist);
+    setSel("selCycleDist", S.cycleDist);
+    setSel("selPt1", S.pt1);
+    setSel("selPt2p", S.pt2p);
+    setSel("selPtShort", S.ptShort);
+
+    setInp("ptPerG", I.ptPerG);
+    setInp("spinPer1k", I.spinPer1k);
+    setInp("ty", I.ty);
+    setInp("junzo", I.junzo);
+    setInp("directDenom", I.directDenom);
+
+    msg(document.getElementById("clickStatus"), `テンプレ適用：${key}`);
+  }
+  function parseCycleNum(key){ const m = String(key||"").match(/(\d+)/); return m ? parseInt(m[1],10) : null; }
+  function inferMaxCycle(cycleDistObj){
+    let mx=0;
+    for(const k of Object.keys(cycleDistObj||{})){
+      const v = cycleDistObj[k];
+      if(Array.isArray(v)){
+        for(const it of v){
+          const n=parseCycleNum(it?.key);
+          if(n && n>mx) mx=n;
+        }
+      }else if(typeof v==="object" && v){
+        for(const kk of Object.keys(v)){
+          const n=parseCycleNum(kk);
+          if(n && n>mx) mx=n;
+        }
+      }
+    }
+    return mx||0;
+  }
+  function normalizeDist(dist){
+    const sum = Object.values(dist).reduce((a,b)=>a+(+b||0),0);
+    if(sum<=0) return dist;
+    const out={};
+    for(const k of Object.keys(dist)) out[k]=(dist[k]||0)/sum;
+    return out;
+  }
+
+  // ---- 非等価 円換算（持ちメダル優先の近似）----
+  function calcYenNonEquiv(investCoins50, collectCoins, holdCoins, lendCoinsPer1k, exchCoinsPer1k){
+    // 目的：等価EV（枚）を壊さず、非等価は“後段レイヤー”で円換算だけ行う
+    // - 投資枚数は等価(50枚/1k)基準で計算された investCoins50 を使用
+    // - 持ちメダル消費分：交換単価（円/枚 = 1000/exch）
+    // - 現金投資分：貸出単価（円/枚 = 1000/lend） ← 換金ギャップが確実に投資側へ乗る
+    // - 回収：交換単価で評価
+    const yenPerCoinCash = 1000 / lendCoinsPer1k; // 現金投資の単価
+    const yenPerCoinOut  = 1000 / exchCoinsPer1k; // 交換単価
+
+    const useHoldCoins = Math.min(investCoins50, Math.max(0, holdCoins||0));
+    const cashInvestCoins50 = Math.max(0, investCoins50 - useHoldCoins);
+
+    // 投資(円)：持ちメダル分は交換単価、現金分は貸出単価
+    const investYen = useHoldCoins * yenPerCoinOut + cashInvestCoins50 * yenPerCoinCash;
+
+    // 回収(円)：交換単価で評価
+    const collectYen = (collectCoins||0) * yenPerCoinOut;
+
+    // 投資ギャップ（参考用）：現金投資に対して「交換-貸出」分だけ枚数が増えるイメージ（等価換算）
+    // 例：10k投資、46/52なら (52-46)=6 → 60枚
+    const gapInvestCoins = (cashInvestCoins50 / 50) * (exchCoinsPer1k - lendCoinsPer1k);
+
+    const evYen = collectYen - investYen;
+
+    return {investYen, collectYen, evYen, gapInvestCoins, useHoldCoins, cashInvestCoins50};
+  }
+
+  function getNonEquivInputs(){
+    const lendCoinsPer1k = Math.max(1, +((document.getElementById("lendCoinsPer1k")||{}).value) || 50);
+    const exchCoinsPer1k = Math.max(1, +((document.getElementById("exchCoinsPer1k")||{}).value) || 50);
+    const holdCoins = Math.max(0, +((document.getElementById("holdCoins")||{}).value) || 0);
+    const speedGph = Math.max(1, +((document.getElementById("speedGph")||{}).value) || 800);
+    const isEquiv = (lendCoinsPer1k===50 && exchCoinsPer1k===50);
+    return {lendCoinsPer1k, exchCoinsPer1k, holdCoins, speedGph, isEquiv, isEquiv: (Number(lendCoinsPer1k)===50 && Number(exchCoinsPer1k)===50)};
+  }
+
+
+  // ===== スルー回数（開始モード分布補正） =====
+  function matMul(A,B){
+    const n=A.length, m=B[0].length, k=B.length;
+    const out=Array.from({length:n}, ()=>Array(m).fill(0));
+    for(let i=0;i<n;i++){
+      for(let t=0;t<k;t++){
+        const a=A[i][t]||0;
+        if(a===0) continue;
+        for(let j=0;j<m;j++) out[i][j]+=a*(B[t][j]||0);
+      }
+    }
+    return out;
+  }
+  function matPow(M,p){
+    const n=M.length;
+    let out=Array.from({length:n}, (_,i)=>Array.from({length:n}, (_,j)=>(i===j?1:0)));
+    let base=M.map(r=>r.slice());
+    let e=p;
+    while(e>0){
+      if(e&1) out=matMul(out, base);
+      e >>= 1;
+      if(e>0) base=matMul(base, base);
+    }
+    return out;
+  }
+  function vecMul(v,M){
+    const n=v.length, m=M[0].length;
+    const out=Array(m).fill(0);
+    for(let i=0;i<n;i++){
+      const a=v[i]||0;
+      if(a===0) continue;
+      for(let j=0;j<m;j++) out[j]+=a*(M[i][j]||0);
+    }
+    return out;
+  }
+  function getTransMat(trans){
+    if(!trans) return null;
+    // 旧：mat（2次元配列）
+    if(Array.isArray(trans.mat) && Array.isArray(trans.mat[0])) return trans.mat;
+    // 新：matrix（from->to の連想配列）を 2D に展開
+    if(trans.matrix && Array.isArray(trans.fromModes) && Array.isArray(trans.toModes)){
+      const mat = trans.fromModes.map(f => trans.toModes.map(t => +((trans.matrix?.[f]?.[t])||0)));
+      return mat;
+    }
+    return null;
+  }
+  function applyModeTrans(initDist, trans, throughCount){
+    if(!initDist || throughCount<=0) return initDist;
+
+    const from=trans?.fromModes || [];
+    const to=trans?.toModes || from;
+    const mat=getTransMat(trans);
+    if(!Array.isArray(from) || from.length===0 || !mat) return initDist;
+
+    // matrix外のモードは温存（念のため）
+    let otherSum=0;
+    const other={};
+    for(const k of Object.keys(initDist||{})){
+      if(from.includes(k)) continue;
+      const p=+initDist[k]||0;
+      if(p>0){ other[k]=p; otherSum+=p; }
+    }
+
+    const v=from.map(k=>+initDist[k]||0);
+    const Mp = (throughCount===1) ? mat : matPow(mat, throughCount);
+    const v2 = vecMul(v, Mp);
+
+    const out={...other};
+    for(let i=0;i<to.length;i++){
+      out[to[i]] = (out[to[i]]||0) + (v2[i]||0);
+    }
+    return normalizeDist(out);
+  }
+  // ===== 視差：モード◯以上◯%（グループ内比率維持で押し上げ） =====
+  function applyModeAtLeastPct(dist, modeOrder, baseMode, targetPct01){
+    dist = normalizeDist(dist||{});
+    if(!baseMode) return dist;
+    const order = (modeOrder && modeOrder.length) ? modeOrder.slice() : Object.keys(dist);
+    const idx = order.indexOf(baseMode);
+    if(idx<0) return dist;
+
+    const hi = new Set(order.slice(idx)); // base以上
+    let sumHi=0, sumLo=0;
+    for(const k of Object.keys(dist)){
+      const p=+dist[k]||0;
+      if(hi.has(k)) sumHi+=p; else sumLo+=p;
+    }
+    const T = Math.max(0, Math.min(1, +targetPct01||0));
+    if(sumHi<=0 && T>0){ return dist; }
+    if(sumLo<=0 && T<1){ return dist; }
+
+    const scaleHi = (sumHi>0) ? (T/sumHi) : 0;
+    const scaleLo = (sumLo>0) ? ((1-T)/sumLo) : 0;
+
+    const out={};
+    for(const k of Object.keys(dist)){
+      const p=+dist[k]||0;
+      out[k] = hi.has(k) ? p*scaleHi : p*scaleLo;
+    }
+    return normalizeDist(out);
+  }
+
+  // ===== 天井周期短縮：当選分布を指定周期へ移す（例：6→5） =====
+  function applyCeilingShorteningToCycleDist(cycleDistObj, fromCycle, toCycle){
+    if(!cycleDistObj) return cycleDistObj;
+    const fc = Math.max(1, Math.floor(+fromCycle||0));
+    const tc = Math.max(1, Math.floor(+toCycle||0));
+    if(!fc || !tc || fc===tc) return cycleDistObj;
+
+    const out = {};
+    for(const modeKey of Object.keys(cycleDistObj)){
+      const arr = cycleDistObj[modeKey];
+      if(!Array.isArray(arr)){
+        out[modeKey]=arr;
+        continue;
+      }
+      // build map cycleNum -> prob
+      const mp = {};
+      for(const it of arr){
+        const n = parseCycleNum(it?.key);
+        if(!n) continue;
+        mp[n] = (mp[n]||0) + (+it.p||0);
+      }
+      if(mp[fc]){
+        mp[tc] = (mp[tc]||0) + mp[fc];
+        mp[fc] = 0;
+      }
+      // rebuild array keeping numeric order
+      const rebuilt = Object.keys(mp)
+        .map(x=>+x).filter(n=>n>0 && mp[n]>0)
+        .sort((a,b)=>a-b)
+        .map(n=>({key: `${n}周期目`, p: mp[n]}));
+      out[modeKey] = rebuilt;
+    }
+    return out;
+  }
+
+  function getModeOrderFromModeDist(modeDistObj){
+    // modeDistObj: {mode: p, ...} (in insertion order)
+    if(!modeDistObj || typeof modeDistObj!=="object") return [];
+    return Object.keys(modeDistObj);
+  }
+
+
+  function buildCyclePMap(list){
+    const map={};
+    // list can be: array of {key,p}, object {"1周期目":p,...}, or null
+    if(!list) return map;
+    if(Array.isArray(list)){
+      for(const it of list){
+        if(!it) continue;
+        const n=parseCycleNum(it.key);
+        if(!n) continue;
+        map[n]=(map[n]||0) + (+it.p||0);
+      }
+      return map;
+    }
+    if(typeof list==="object"){
+      for(const k of Object.keys(list)){
+        const n=parseCycleNum(k);
+        if(!n) continue;
+        map[n]=(map[n]||0) + (+list[k]||0);
+      }
+      return map;
+    }
+    // number/string etc -> ignore
+    return map;
+  }
+  function avgPt(profileObj, mode, pick){
+    if(!profileObj) return {avg:0, max:0, ok:false};
+    let arr = profileObj[mode] || profileObj["共通"] || null;
+    if(!arr){
+      const keys = Object.keys(profileObj);
+      if(keys.length>0) arr = profileObj[keys[0]];
+    }
+    if(!arr || arr.length===0) return {avg:0, max:0, ok:false};
+    let avg=0, max=0, sum=0;
+    for(const it of arr){
+      const pt = pickRangePt(it, pick);
+      const p = +it.p || 0;
+      avg += pt*p;
+      sum += p;
+      if(pt>max) max=pt;
+    }
+    if(sum>0) avg/=sum;
+    return {avg, max, ok:true};
+  }
+
+  
+  // ===== calc engine (from v5.2) =====
+  function calcForMode(opts){
+    const {startCycle, startPt, mode, cycleP, maxCycle, pt1Profile, pt2pProfile, ptShortProfile, ptPerG, coinPerG, ty, junzo, betPerG, directDenom, preType, preG, prePtMin, prePtMax, prePtPick, prePtCustom, shortThPt} = opts;
+
+    const S={};
+    for(let k=maxCycle;k>=1;k--) S[k]=(S[k+1]||0)+(cycleP[k]||0);
+    const hitProb = S[startCycle] || 0;
+    if(hitProb<=0) return {ev:0, invest:0, hitProb:0, avgHitCycle:0, expGames:0, expPt:0};
+
+    const h={};
+    for(let k=1;k<=maxCycle;k++){ 
+      const surv=S[k]||0;
+      h[k]= surv>0 ? (cycleP[k]||0)/surv : 0;
+    }
+
+        // 期待pt（分布ベース）＋「〇pt以上で次周期天井短縮」の1回だけの状態を持つDP
+    const enableShort = (shortThPt||0) > 0 && !!ptShortProfile;
+
+    function pickArr(profileObj){
+      if(!profileObj) return null;
+      let arr = profileObj[mode] || profileObj["共通"] || null;
+      if(!arr){
+        const keys = Object.keys(profileObj||{});
+        if(keys.length>0) arr = profileObj[keys[0]];
+      }
+      return (arr && arr.length) ? arr : null;
+    }
+
+    function getArrForCycle(cycle, shortFlag){
+      if(shortFlag && enableShort){
+        return pickArr(ptShortProfile);
+      }
+      const prof = (cycle===1) ? pt1Profile : pt2pProfile;
+      return pickArr(prof);
+    }
+
+    const memo = {};
+    function dp(cycle, shortFlag){
+      if(cycle > maxCycle) return 0;
+      const key = cycle + "|" + (shortFlag?1:0);
+      if(memo[key]!=null) return memo[key];
+
+      const arr = getArrForCycle(cycle, shortFlag);
+      if(!arr){ memo[key]=0; return 0; }
+
+      let sumP=0;
+      for(const it of arr){ const p=+it.p||0; if(p>0) sumP+=p; }
+      if(sumP<=0){ memo[key]=0; return 0; }
+
+      // 短縮は「当該周期内で閾値以上に到達したケース」だけを短縮時分布で近似
+      const shortAvg = (enableShort && !shortFlag) ? avgPt(ptShortProfile, mode, prePtPick) : {avg:0, ok:false};
+
+      // この周期の「到達pt」期待値（当選でもミスでも到達する前提）
+      let expThis=0;
+      for(const it of arr){
+        const pt = pickRangePt(it, prePtPick);
+        const p=+it.p||0;
+        if(p<=0) continue;
+        const w = p/sumP;
+        const ptEff = (shortAvg.ok && pt >= shortThPt) ? shortAvg.avg : pt;
+        expThis += ptEff * w;
+      }
+
+      // ミス時：次周期へ（短縮判定は当該周期で完結させる）
+      let expMiss=0;
+      for(const it of arr){
+        const pt = pickRangePt(it, prePtPick);
+        const p=+it.p||0;
+        if(p<=0) continue;
+        const w = p/sumP;
+        const ptEff = (shortAvg.ok && pt >= shortThPt) ? shortAvg.avg : pt;
+        expMiss += w * (ptEff + dp(cycle+1, false));
+      }
+
+      const hk = h[cycle] || 0; // この周期で「当選周期がここ」になる条件付き確率
+      const val = hk * expThis + (1-hk) * expMiss;
+
+      memo[key]=val;
+      return val;
+    }
+
+    let expPt = dp(startCycle, false);
+    // 打ち出しptを差し引き（同一周期内の想定）
+    expPt = Math.max(0, expPt - (startPt||0));
+
+    if(ptPerG<=0 || coinPerG<=0){
+      return {ev:0, invest:0, hitProb:0, avgHitCycle:0, expGames:0, expPt:expPt};
+    }
+
+    // 前兆起点ptの決定（幅対応）
+    const mn = Math.min(prePtMin||0, prePtMax||0);
+    const mx = Math.max(prePtMin||0, prePtMax||0);
+    let prePt = (mn+mx)/2;
+    if(prePtPick==="min") prePt = mn;
+    else if(prePtPick==="max") prePt = mx;
+
+    // まずpt→G（ベース）
+    let baseGames = expPt / ptPerG;
+
+    // 前兆の加算（近似）
+    if((preG||0)>0){
+      if(preType==="after"){
+        baseGames = baseGames + preG;
+      } else {
+        // 前前兆：前兆開始pt到達後、前兆Gが下限になる
+        const preStartGames = Math.max(0, (prePt - (startPt||0)) / ptPerG);
+        baseGames = Math.max(baseGames, preStartGames + preG);
+      }
+    }
+
+    // 直撃（暫定）：通常時G中の独立当選として「直撃が先に来る確率」を反映
+    let pDirectWindow = 0;
+    if((directDenom||0)>0 && baseGames>0){
+      const p = 1.0 / directDenom;
+      pDirectWindow = 1.0 - Math.pow(1.0-p, baseGames);
+    }
+    const totalHitProb = 1.0 - (1.0-hitProb) * (1.0-pDirectWindow);
+
+    let expGames = baseGames;
+    // 直撃がある場合：周期到達までの通常G(baseGames)より前に直撃する可能性があるため、
+    // 期待通常Gを E[min(T_direct, baseGames)] で近似して投資を減らす
+    if((directDenom||0)>0 && baseGames>0){
+      const p = 1.0 / directDenom;
+      // 幾何分布(1..∞)の打ち切り期待値：sum_{g=1..N} (1-p)^(g-1) = (1-(1-p)^N)/p
+      expGames = (p>0) ? ((1.0 - Math.pow(1.0-p, baseGames)) / p) : baseGames;
+      // 数値誤差ガード
+      expGames = Math.min(baseGames, Math.max(0, expGames));
+    }
+    const invest = expGames * coinPerG;
+
+    // 機械割（近似）：総回転Gあたりの期待差枚から算出（1G=3枚投入と近似）
+    // 例：機械割(%) = 100 * (1 + (期待差枚/G) / 3)
+    const jz = (junzo||0)>0 ? (junzo||0) : 0;
+    const atGamesExp = (jz>0) ? (totalHitProb * (ty / jz)) : 0;
+    const totalGamesAll = expGames + atGamesExp;
+
+    const ev = totalHitProb * ty - invest;
+
+    const machine = (totalGamesAll>0) ? (1 + (ev/totalGamesAll)/3.0) : 0;
+
+    let avgHitCycle=0;
+    for(let k=startCycle;k<=maxCycle;k++) avgHitCycle += k * ((cycleP[k]||0)/hitProb);
+
+    return {ev, invest, hitProb: totalHitProb, avgHitCycle, expGames, expPt, expGamesAll: totalGamesAll, machine};
+  }
+
+  function calcEV(){
+    const modeKey=document.getElementById("selModeDist").value;
+    const cycleKey=document.getElementById("selCycleDist").value;
+    const pt1Key=document.getElementById("selPt1").value;
+    const pt2Key=document.getElementById("selPt2p").value;
+    const startCycle=parseInt(document.getElementById("startCycle").value,10) || 1;
+    const throughCount = Math.max(0, parseInt((document.getElementById("throughCount")||{}).value,10) || 0);
+    const modeTransKey = (document.getElementById("selModeTrans")||{}).value || "";
+
+    // 視差：モード◯以上◯%
+    const useModeAtLeast = !!(document.getElementById("chkModeAtLeast")||{}).checked;
+    const modeAtLeastBase = (document.getElementById("selModeAtLeast")||{}).value || "";
+    const modeAtLeastPct = +((document.getElementById("modeAtLeastPct")||{}).value) || 0;
+
+    // 天井周期短縮（分布移し替え）
+    const useCeilShort = !!(document.getElementById("chkCeilShort")||{}).checked;
+    const ceilFrom = Math.max(1, Math.floor(+((document.getElementById("ceilFrom")||{}).value) || 0));
+    const ceilTo = Math.max(1, Math.floor(+((document.getElementById("ceilTo")||{}).value) || 0));
+
+    const ty=+document.getElementById("ty").value || 0;
+    const ptPerG=+document.getElementById("ptPerG").value || 0;
+    const spinPer1k=+document.getElementById("spinPer1k").value || 0;
+    const startPt=+document.getElementById("startPt").value || 0;
+    const shortThPt=+document.getElementById("shortThPt").value || 0;
+    const shortPtKey=(document.getElementById("selPtShort")||{}).value || "";
+
+    const junzo=+document.getElementById("junzo").value || 0;
+    const betPerG=+document.getElementById("betPerG").value || 3;
+
+    const directDenom=+document.getElementById("directDenom").value || 0;
+    const preType=document.getElementById("preType").value;
+    const preG=+document.getElementById("preG").value || 0;
+    const prePtMin=+document.getElementById("prePtMin").value || 0;
+    const prePtMax=+document.getElementById("prePtMax").value || 0;
+    const prePtPick=document.getElementById("prePtPick").value;
+    const prePtCustom=0; // 任意入力は廃止
+
+    const ne = getNonEquivInputs();
+
+    const coinPerG = (spinPer1k>0) ? (50/spinPer1k) : 0; // 等価EV本体は50固定
+// 1Gあたり投資枚数（等価=50, 非等価は貸出枚数で補正）
+
+    const modeDist = dataModel.modeDist?.[modeKey] || null;
+    let cycleDist = dataModel.hitRate?.[cycleKey] || null;
+    if(useCeilShort && cycleDist && ceilFrom>0 && ceilTo>0 && ceilFrom!==ceilTo){
+      cycleDist = applyCeilingShorteningToCycleDist(cycleDist, ceilFrom, ceilTo);
+    }
+    const pt1 = dataModel.ptDist?.[pt1Key] || null;
+    const pt2p = dataModel.ptDist?.[pt2Key] || null;
+    const ptShort = (shortPtKey && dataModel.ptDist) ? (dataModel.ptDist[shortPtKey] || null) : null;
+
+    if(!modeDist || !cycleDist || !pt1 || !pt2p){
+      return {ok:false, reason:"必要データが足りません（モード/周期当選/pt分布を登録してね）"};
+    }
+
+    let init = normalizeDist(modeDist);
+
+    const modeTrans = (modeTransKey && dataModel.modeTrans) ? (dataModel.modeTrans[modeTransKey] || null) : null;
+    if(modeTrans && throughCount>0){
+      init = applyModeTrans(init, modeTrans, throughCount);
+    }
+
+    // 視差：モード◯以上◯%（開始モード分布を補正）
+    if(useModeAtLeast && modeAtLeastBase && modeAtLeastPct>0){
+      const order = getModeOrderFromModeDist(modeDist);
+      init = applyModeAtLeastPct(init, order, modeAtLeastBase, modeAtLeastPct/100.0);
+    }
+
+    const maxCycle = inferMaxCycle(cycleDist) || 6;
+
+    let totalEV=0, totalInvest=0, totalHitProb=0, totalAvgHitCycle=0, totalGames=0, totalGamesAll=0, totalPt=0;
+
+    for(const mode of Object.keys(init)){
+      const initP = init[mode] || 0;
+      if(initP<=0) continue;
+
+      const cycleP = buildCyclePMap(cycleDist[mode] || cycleDist['共通'] || []);
+      const r = calcForMode({startCycle, startPt, mode, cycleP, maxCycle, pt1Profile:pt1, pt2pProfile:pt2p, ptPerG, coinPerG, ty, directDenom, preType, preG, prePtMin, prePtMax, prePtPick, prePtCustom, shortThPt, ptShortProfile: ptShort, junzo, betPerG});
+
+      totalEV += initP * r.ev;
+      totalInvest += initP * r.invest;
+      totalHitProb += initP * r.hitProb;
+      totalAvgHitCycle += initP * r.avgHitCycle;
+      totalGames += initP * r.expGames;
+      totalGamesAll += initP * (r.expGamesAll||r.expGames||0);
+      totalPt += initP * r.expPt;
+    }
+
+    const machine = (totalGamesAll>0) ? (1 + (totalEV/totalGamesAll)/3.0) : 0;
+
+    const expCollectCoins = totalHitProb * ty; // 期待回収枚数（枚）
+    const yenObj = (!ne.isEquiv)
+      ? calcYenNonEquiv(totalInvest, expCollectCoins, ne.holdCoins, ne.lendCoinsPer1k, ne.exchCoinsPer1k)
+      : {investYen: null, collectYen: null, evYen: null};
+    const hours = (!ne.isEquiv && totalGamesAll>0) ? (totalGamesAll / (ne.speedGph||800)) : null;
+    const wage = (!ne.isEquiv && hours && hours>0) ? (yenObj.evYen / hours) : null;
+return {ok:true, ev: totalEV, invest: totalInvest, hitProb: totalHitProb, avgHitCycle: totalAvgHitCycle, expGames: totalGames, expGamesAll: totalGamesAll, expPt: totalPt, ty: ty, machine,
+            investYen: yenObj.investYen, collectYen: yenObj.collectYen, evYen: yenObj.evYen, gapInvestCoins: yenObj.gapInvestCoins, useHoldCoins: yenObj.useHoldCoins, cashInvestCoins50: yenObj.cashInvestCoins50, wage: wage, isEquiv: ne.isEquiv, lendCoinsPer1k: ne.lendCoinsPer1k, exchCoinsPer1k: ne.exchCoinsPer1k, holdCoins: ne.holdCoins};
+  }
+
+  function fmtPct(x){ return (x*100).toFixed(1)+"%"; }
+  function fmtNum(x){ return (Math.round(x*10)/10).toFixed(1); }
+  function fmtInt(x){ return String(Math.round(x)); }
+
+  function renderCalcResult(res){
+    // KPIラベル（上段5枠）を等価/非等価で切替
+    function setKpiLabels(isEquiv){
+      const labels = document.querySelectorAll(".kpi .box .muted");
+      if(!labels || labels.length<5) return;
+      if(isEquiv){
+        labels[0].textContent = "期待値（円）";
+        labels[1].textContent = "投資（円）";
+        labels[2].textContent = "当選確率（開始周期以降）";
+        labels[3].textContent = "平均当選周期";
+        labels[4].textContent = "機械割";
+      }else{
+        labels[0].textContent = "期待値（円）";
+        labels[1].textContent = "投資（円）";
+        labels[2].textContent = "回収（円）";
+        labels[3].textContent = "平均当選周期";
+        labels[4].textContent = "時給（円/時）";
+      }
+    }
+
+    if(!res.ok){
+      setKpiLabels(true);
+      document.getElementById("kpiEV").textContent="-";
+      document.getElementById("kpiInvest").textContent="-";
+      document.getElementById("kpiHit").textContent="-";
+      document.getElementById("kpiAvgCycle").textContent="-";
+      document.getElementById("kpiMachine").textContent="-";
+      document.getElementById("calcMsg").textContent=res.reason || "計算できませんでした";
+      return;
+    }
+
+    setKpiLabels(!!res.isEquiv);
+
+    if(res.isEquiv){
+      // 等価：枚と機械割
+      document.getElementById("kpiEV").textContent = (typeof res.ev==="number") ? (Math.round(res.ev * (1000/50)) + "円") : "-";
+      document.getElementById("kpiInvest").textContent = (typeof res.invest==="number") ? (Math.round(res.invest * (1000/50)) + "円") : "-";
+      document.getElementById("kpiHit").textContent = fmtPct(res.hitProb);
+      document.getElementById("kpiAvgCycle").textContent = fmtNum(res.avgHitCycle);
+      document.getElementById("kpiMachine").textContent = (res.machine>0) ? ((res.machine*100).toFixed(1) + "%") : "-";
+    }else{
+      // 非等価：円と時給（※等価EV(枚)は内部基準として保持）
+      document.getElementById("kpiEV").textContent = (typeof res.evYen==="number") ? (Math.round(res.evYen) + "円") : "-";
+      document.getElementById("kpiInvest").textContent = (typeof res.investYen==="number") ? (Math.round(res.investYen) + "円") : "-";
+      document.getElementById("kpiHit").textContent = (typeof res.collectYen==="number") ? (Math.round(res.collectYen) + "円") : "-";
+      document.getElementById("kpiAvgCycle").textContent = fmtNum(res.avgHitCycle);
+      document.getElementById("kpiMachine").textContent = (typeof res.wage==="number") ? (Math.round(res.wage) + "円/時") : "-";
+    }
+
+    // 下段メッセージ（詳細）
+    document.getElementById("calcMsg").textContent = (res.isEquiv)
+      ? `期待pt: ${fmtNum(res.expPt)}pt / 通常期待G: ${fmtNum(res.expGames)}G / 総回転G(近似): ${fmtNum(res.expGamesAll||res.expGames)}G / 当選確率: ${fmtPct(res.hitProb)} / 機械割(近似): ${(res.machine>0)?((res.machine*100).toFixed(1)+"%"):"-"} / 期待差枚: ${fmtInt(res.ev)}枚 / 期待差額: ${Math.round((res.ev||0)*(1000/50))}円`
+      : `期待pt: ${fmtNum(res.expPt)}pt / 通常期待G: ${fmtNum(res.expGames)}G / 総回転G(近似): ${fmtNum(res.expGamesAll||res.expGames)}G / 当選確率: ${fmtPct(res.hitProb)}`
+        + ` / 時給(近似): ${(typeof res.wage==="number")?(Math.round(res.wage)+"円/時"):"-"}`
+        + ` / 期待差額: ${(typeof res.evYen==="number")?(Math.round(res.evYen)+"円"):"-"}`
+        + ` / 投資(円): ${(typeof res.investYen==="number")?(Math.round(res.investYen)+"円"):"-"}`
+        + ` / 回収(円): ${(typeof res.collectYen==="number")?(Math.round(res.collectYen)+"円"):"-"}`
+        + ` / 持ち消費: ${(typeof res.useHoldCoins==="number")?(Math.round(res.useHoldCoins)+"枚"):"-"} / 現金投資: ${(typeof res.cashInvestCoins50==="number")?(Math.round(res.cashInvestCoins50)+"枚"):"-"} / ギャップ投資(枚): ${(typeof res.gapInvestCoins==="number")?(Math.round(res.gapInvestCoins)+"枚"):"-"}`;
+  }
+
+
+
+  
+  
+document.getElementById("btnCalc").addEventListener("click", (e)=>{
+    e.preventDefault();
+    try{
+      const res = calcEV();
+      renderCalcResult(res);
+    }catch(err){
+      console.error(err);
+      const cm=document.getElementById("calcMsg");
+      if(cm) cm.textContent = "計算エラー: " + (err && err.message ? err.message : String(err));
+    }
+  });
+  document.getElementById("btnCalcAndSave").addEventListener("click", (e)=>{
+    e.preventDefault();
+    let res;
+    try{ res = calcEV(); renderCalcResult(res); }
+    catch(err){ console.error(err); const cm=document.getElementById("calcMsg"); if(cm) cm.textContent="計算エラー: "+(err&&err.message?err.message:String(err)); return; }
+    const name=document.getElementById("presetName").value.trim();
+    if(!name) return msg(document.getElementById("presetMsg"), "上書き保存するならプリセット名を入れてね");
+    const presets=loadAllPresets(); presets[name]=dataModel; saveAllPresets(presets); refreshPresetSelect();
+    msg(document.getElementById("presetMsg"), `上書き保存しました：${name}`);
+  });
+
+  
+  // ===== /calc engine =====
+
+function refreshCalcSelectors(prefer){
+    prefer = prefer || {};
+    const mdKeys = getKeys(dataModel.modeDist||{});
+    const cdKeys = getKeys(dataModel.hitRate||{});
+    const ptKeys = getKeys(dataModel.ptDist||{});
+    const mtKeys = getKeys(dataModel.modeTrans||{});
+
+    const curMd = document.getElementById("selModeDist")?.value;
+    const curCd = document.getElementById("selCycleDist")?.value;
+    const curMt = document.getElementById("selModeTrans")?.value;
+    const curPt1 = document.getElementById("selPt1")?.value;
+    const curPt2 = document.getElementById("selPt2p")?.value;
+    const curShort = document.getElementById("selPtShort")?.value;
+
+    const mdItems = mdKeys.map(k=>({value:k, text:(k==="設定変更時・革命ボーナス後・AT後" ? "AT後(デフォ)" : k)}));
+
+    const mtItems = [{value:"", text:"（未選択：補正なし）"}, ...mtKeys.map(k=>({value:k, text:k}))];
+
+    // 周期当選分布：デフォ以外はキー名を表示
+    const cdItems = cdKeys.map(k=>{
+      const isDef = (k==="周期当選分布" || k==="default" || /デフォ/.test(k));
+      return {value:k, text: isDef ? "周期当選分布(デフォ)" : k};
+    });
+
+    const pt1Items = ptKeys.map(k=>({value:k, text:(k==="1周期目" ? "1周期目(デフォ)" : k)}));
+    const pt2Items = ptKeys.map(k=>({value:k, text:(/2周期目以降/.test(k) ? "2周期以降(デフォ)" : k)}));
+
+    const mdDef = (prefer.modeDist && mdKeys.includes(prefer.modeDist)) ? prefer.modeDist
+               : (curMd && mdKeys.includes(curMd)) ? curMd
+               : (mdKeys[0]||"");
+
+    const cdDef = (prefer.cycleDist && cdKeys.includes(prefer.cycleDist)) ? prefer.cycleDist
+               : (curCd && cdKeys.includes(curCd)) ? curCd
+               : (cdKeys[0]||"");
+
+    const pt1Def = (prefer.pt1 && ptKeys.includes(prefer.pt1)) ? prefer.pt1
+                : (curPt1 && ptKeys.includes(curPt1)) ? curPt1
+                : (ptKeys.find(x=>/1周期/.test(x)) || ptKeys[0] || "");
+
+    const pt2Def = (prefer.pt2p && ptKeys.includes(prefer.pt2p)) ? prefer.pt2p
+                : (curPt2 && ptKeys.includes(curPt2)) ? curPt2
+                : (ptKeys.find(x=>/2周期目以降/.test(x)) || ptKeys[0] || "");
+
+    fillSelect(document.getElementById("selModeDist"), mdItems.length?mdItems:[{value:"", text:"(未登録)"}], mdDef);
+    // 視差：モード◯以上 の選択肢を更新（現在のモード分布から）
+    (function(){
+      const el=document.getElementById("selModeAtLeast");
+      if(!el) return;
+      const mdKey = (document.getElementById("selModeDist")||{}).value || mdDef || "";
+      const md = dataModel.modeDist?.[mdKey] || dataModel.modeDist?.[mdDef] || null;
+      const modes = getModeOrderFromModeDist(md);
+      const items = modes.map(m=>({value:m, text:`${m}以上`}));
+      fillSelect(el, items.length?items:[{value:"", text:"(モード未登録)"}], items[0]?.value||"");
+    })();
+
+    fillSelect(document.getElementById("selModeTrans"), mtItems, prefer.modeTrans || curMt || "");
+    fillSelect(document.getElementById("selCycleDist"), cdItems.length?cdItems:[{value:"", text:"(未登録)"}], cdDef);
+    fillSelect(document.getElementById("selPt1"), pt1Items.length?pt1Items:[{value:"", text:"(未登録)"}], pt1Def);
+    fillSelect(document.getElementById("selPt2p"), pt2Items.length?pt2Items:[{value:"", text:"(未登録)"}], pt2Def);
+
+    // 短縮時の周期pt分布（未選択=短縮なし）
+    (function(){
+      const sel=document.getElementById("selPtShort");
+      if(!sel) return;
+      const items = [{value:"", text:"(未選択：短縮なし)"}].concat(ptKeys.map(k=>({value:k, text:k})));
+      const def = (prefer.ptShort && (prefer.ptShort==="" || ptKeys.includes(prefer.ptShort))) ? prefer.ptShort
+               : (curShort && (curShort==="" || ptKeys.includes(curShort))) ? curShort
+               : "";
+      fillSelect(sel, items, def);
+    })();
+  }
+  // init
+  (function(){
+    const sel = document.getElementById("startCycle");
+    if(sel){
+      const items = Array.from({length:10}, (_,i)=>({value:String(i+1), text:`${i+1}周期目`}));
+      const cur = sel.value;
+      fillSelect(sel, items, (cur && items.some(x=>x.value===cur)) ? cur : "1");
+    }
+  })();
+    // 視差：モード◯以上 の候補をモード分布変更に追従（他の選択は維持）
+    function refreshModeAtLeastOptions(){
+      const el=document.getElementById("selModeAtLeast");
+      const mdSel=document.getElementById("selModeDist");
+      if(!el || !mdSel) return;
+      const mdKey = mdSel.value || "";
+      const md = dataModel.modeDist?.[mdKey] || null;
+      const modes = getModeOrderFromModeDist(md);
+      const items = modes.map(m=>({value:m, text:`${m}以上`}));
+      const cur = el.value || "";
+      fillSelect(el, items.length?items:[{value:"", text:"(モード未登録)"}], (cur && modes.includes(cur)) ? cur : (items[0]?.value||""));
+    }
+    refreshModeAtLeastOptions();
+    document.getElementById("selModeDist")?.addEventListener("change", refreshModeAtLeastOptions);
+    initMachineTplSelect();
+    refreshCalcSelectors();
+    try { renderTable(); } catch(e) { console.warn("renderTable failed (UI may hide data-input table):", e); }
+  document.getElementById("btnApplyMachineTpl")?.addEventListener("click", applyMachineTemplate);
+  refreshContextSelect();
+})();
+</script>
+</body>
+</html>
