@@ -1,0 +1,666 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>リセ／据え 期待値計算ツール v1.9.2</title>
+<style>
+  :root{--bg:#f6f7fb;--card:#fff;--bd:#e5e7eb;--txt:#111827;--muted:#6b7280;--accent:#2563eb;--warn:#b45309;}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Noto Sans JP","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;background:var(--bg);color:var(--txt);}
+  .wrap{max-width:980px;margin:18px auto;padding:0 14px 40px;}
+  .top{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+  .badge{font-size:12px;border:1px solid var(--bd);background:#fff;padding:4px 10px;border-radius:999px;color:var(--muted)}
+  .card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:14px 14px;margin-top:12px;box-shadow:0 6px 18px rgba(0,0,0,.04)}
+  .note{color:var(--warn);font-size:13px;line-height:1.5;margin:0 0 6px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+  @media (max-width:760px){ .grid,.grid3{grid-template-columns:1fr;} }
+  label{display:block;font-size:12px;color:var(--muted);margin:2px 0 6px}
+  input,select{width:100%;padding:10px 12px;border:1px solid var(--bd);border-radius:12px;font-size:16px;outline:none;background:#fff}
+  input:focus,select:focus{border-color:#93c5fd;box-shadow:0 0 0 4px rgba(37,99,235,.12)}
+  .h2{font-size:16px;font-weight:700;margin:0 0 10px}
+  .divider{height:1px;background:var(--bd);margin:12px 0}
+  .btn{width:100%;padding:14px 14px;border:none;border-radius:14px;background:var(--accent);color:#fff;font-size:18px;font-weight:700;cursor:pointer}
+  .btn:disabled{opacity:.55;cursor:not-allowed}
+  .kpi{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
+  @media (max-width:760px){ .kpi{grid-template-columns:1fr;} }
+  .kpi .big{font-size:26px;font-weight:800}
+  .kpi .sub{color:var(--muted);font-size:13px}
+  .mono{font-variant-numeric:tabular-nums}
+  .small{font-size:12px;color:var(--muted);line-height:1.45}
+  .pill{display:inline-block;padding:3px 10px;border-radius:999px;border:1px solid var(--bd);background:#fff;color:var(--muted);font-size:12px}
+  .hide{display:none !important;}
+  .err{color:#b91c1c;font-size:13px;margin-top:8px}
+  .warn{color:#b45309;font-size:13px;margin-top:8px}
+
+  .kv{display:flex;justify-content:space-between;gap:10px;padding:4px 0;border-bottom:1px dashed var(--bd);font-size:13px}
+  .kv b{font-size:14px}
+  .hr{height:1px;background:var(--bd);margin:8px 0}
+
+
+/* v2: 等価モードでは時給は表示しない（機械割を参照） */
+body.mode-eq #wageBlock { display: none !important; }
+
+
+.radio-group{display:flex;gap:14px;flex-wrap:wrap}
+.radio{display:flex;gap:8px;align-items:center;font-size:14px}
+.hint{font-size:12px;color:#6b7280;margin-top:4px;line-height:1.35}
+
+/* v205: 回転数確認（初当たり/TY/純増） */
+.toggle-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.toggle-row input[type="checkbox"]{transform:scale(1.05)}
+.checkbox-label{font-size:14px}
+.hidden{display:none !important;}
+
+
+    .toggle-row{display:flex;gap:12px;align-items:center;margin-top:10px;}
+    .toggle{display:flex;gap:10px;align-items:center;font-weight:600;color:var(--text);}
+    .toggle input{transform:scale(1.15);}
+    .spin-check{margin-top:10px;padding:12px;border:1px dashed var(--border);border-radius:12px;background:#fff;}
+    .hint{font-size:12px;color:#6b7280;margin-top:8px;}
+    .spin-check__label{display:flex;align-items:center;gap:8px;font-weight:700;}
+    .spin-check__hint{font-size:12px;color:#6b7280;margin-top:6px;line-height:1.5;}
+    .grid2{display:grid;grid-template-columns:1fr;gap:12px;margin-top:12px;}
+    @media (min-width: 900px){.grid2{grid-template-columns:1fr 1fr;}}
+    .subbox{padding:10px;border:1px solid var(--border);border-radius:12px;background:#fafafa;}
+    .subbox__title{font-weight:700;font-size:13px;margin-bottom:8px;color:#111827;}
+    .calcrow{display:flex;justify-content:space-between;gap:12px;margin-top:8px;font-size:12px;color:#374151;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <h1 style="font-size:20px;margin:0">リセ／据え 期待値計算ツール</h1>
+    <span class="badge">v1.9.2</span>
+  </div>
+
+  <div class="card">
+    <p class="note">※重要：この計算は当選分布（荒さ）や出玉分布を入れていません。平均値ベースの近似なので、実戦とはブレます（短時間・荒い台ほどブレやすい）。</p>
+    <p class="note">※非等価でも、入力するEV/機械割は「等価時の数値」です（回転数算出・比較のベースが等価のため）。</p>
+    <p class="note">※実戦では、表示されている機械割より<strong>1〜2%低く見積もって</strong>判断すると、体感値に近くなることが多い点に注意してください。</p>
+    <p class="note">※等価の機械割は「EV÷期待投資」から算出します（入力の機械割は参考値として残しています）。
+※期待値や機械割が±付近（例：期待値±150円以内、機械割100%±0.5%以内）の場合、回転数/時給などの派生計算が不安定になりやすいので参考程度にしてください。</p>
+
+    <div class="grid3">
+      <div>
+        <label>事前リセット率（%）</label>
+        <input id="pReset" type="number" inputmode="decimal" value="50" min="0" max="100" step="0.1">
+      </div>
+      <div>
+        <label>計算モード</label>
+        <select id="mode">
+          <option value="eq">等価</option>
+          <option value="na">非等価（持ちメダル＋現金ギャップ）</option>
+        </select>
+      </div>
+      <div>
+        <label>時速（回転/時）</label>
+        <input id="gph" type="number" inputmode="numeric" value="800" min="1" />
+      </div>
+
+    </div>
+<div class="spin-check" id="spinCheckPanel">
+      <label class="spin-check__label">
+        <input type="checkbox" id="chkRtpCalc">
+        <span>機械割算出（等価のみ）</span>
+      </label>
+      <div class="spin-check__hint">
+        初当たり・TY・純増から「総回転数（= 初当たり(1/x) + TY/純増）」を推定し、EV（円）から機械割（%）を逆算します（3枚掛け固定）。
+        ※機械割100%付近で回転数が不安定な時の補助用
+      </div>
+
+      <div id="rtpCalcFields" class="grid2 hidden">
+        <div class="subbox">
+          <div class="subbox__title">リセット側</div>
+          <div class="grid3">
+            <div>
+              <label>初当たり（1/x）</label>
+              <input id="hitR_calc" type="number" inputmode="decimal" value="360" min="1" step="1">
+            </div>
+            <div>
+              <label>TY（枚）</label>
+              <input id="tyR_calc" type="number" inputmode="decimal" value="500" min="0" step="0.1">
+            </div>
+            <div>
+              <label>純増（枚/G）</label>
+              <input id="junzoR_calc" type="number" inputmode="decimal" value="2.5" min="0.1" step="0.1">
+            </div>
+          </div>
+          <div class="calcrow">
+            <div>推定総回転数: <span id="totalGR">-</span> G</div>
+            <div>算出機械割: <span id="rtpR_calc_out">-</span> %</div>
+          </div>
+        </div>
+
+        <div class="subbox">
+          <div class="subbox__title">据え置き側</div>
+          <div class="grid3">
+            <div>
+              <label>初当たり（1/x）</label>
+              <input id="hitK_calc" type="number" inputmode="decimal" value="384" min="1" step="1">
+            </div>
+            <div>
+              <label>TY（枚）</label>
+              <input id="tyK_calc" type="number" inputmode="decimal" value="500" min="0" step="0.1">
+            </div>
+            <div>
+              <label>純増（枚/G）</label>
+              <input id="junzoK_calc" type="number" inputmode="decimal" value="2.5" min="0.1" step="0.1">
+            </div>
+          </div>
+          <div class="calcrow">
+            <div>推定総回転数: <span id="totalGK">-</span> G</div>
+            <div>算出機械割: <span id="rtpK_calc_out">-</span> %</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="h2">期待値入力（等価）</div>
+    <div class="grid">
+      <div>
+        <label>EV（リセット時・円）</label>
+        <input id="evR" type="number" inputmode="decimal" value="572" step="1">
+      </div>
+      <div>
+        <label>機械割（リセット時・%）</label>
+        <input id="rtpR" type="number" inputmode="decimal" value="101.8" step="0.1">
+      </div>
+      <div>
+        <label>EV（据え置き時・円）</label>
+        <input id="evK" type="number" inputmode="decimal" value="-632" step="1">
+      </div>
+      <div>
+        <label>機械割（据え置き時・%）</label>
+        <input id="rtpK" type="number" inputmode="decimal" value="98" step="0.1">
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <details id="naDetails" class="card hidden" style="padding:14px;margin:0;border-radius:14px;background:#fbfbff">
+      <summary class="h2" style="margin:0;cursor:pointer;list-style:none;">非等価入力</summary>
+      <div id="naBlock" style="margin-top:10px">
+              <div class="grid">
+        <div>
+          <label>貸出（枚/1000円）</label>
+          <input id="lendCoins" type="number" inputmode="decimal" value="46" step="0.1" min="1">
+        </div>
+        <div>
+          <label>交換率（枚/100円）※52のように入力したら自動で5.2補正</label>
+          <input id="exRate" type="number" inputmode="decimal" value="5.2" step="0.01" min="0.1">
+        </div>
+        <div>
+          <label>1K回転数</label>
+          <input id="spinsPer1k" type="number" inputmode="decimal" value="34.7" step="0.1" min="1">
+        </div>
+        <div>
+          <label>持ちメダル枚数</label>
+          <input id="holdCoins" type="number" inputmode="decimal" value="0" step="1" min="0">
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="h2">初当たり（1/x）※投資ギャップの近似に使用（分布は考慮しません）</div>
+      <div class="grid">
+        <div>
+          <label>初当たり（リセット時 1/x）</label>
+          <input id="hitR" type="number" inputmode="decimal" value="360" step="1" min="1">
+        </div>
+        <div>
+          <label>初当たり（据え置き時 1/x）</label>
+          <input id="hitK" type="number" inputmode="decimal" value="384" step="1" min="1">
+        </div>
+      </div>
+
+      <p class="small" style="margin:10px 0 0">
+        ・非等価は「投資ギャップ（貸出差×交換価値）」と「回収ギャップ（交換価値が20円/枚より低い分）」を、等価EV/機械割から近似反映します。<br>
+        ・持ちメダルが混ざる場合、現金比率で誤差が出ます（全機種対応の都合上、注意文でカバー）。
+      </p>
+      </div>
+    </details>
+
+    <div class="divider"></div>
+
+    <button id="btn" class="btn">計算</button>
+    <div id="err" class="err hide"></div>
+    <div id="warn" class="warn hide"></div>
+
+    <div class="divider"></div>
+
+    <div class="kpi">
+      <div>
+        <div class="sub">期待値（円ベース）</div>
+        <div id="outEV" class="big mono">-</div>
+        <div id="outEVReplayWrap" style="display:none;margin-top:10px">
+          <div class="sub">期待値（枚ベース・再プレイ・円換算）</div>
+          <div id="outEVReplay" class="big mono" style="font-size:1.35rem">-</div>
+        </div>
+        <div id="outEVSub" class="sub mono"></div>
+      
+      </div>
+      <div id="rtpBlock">
+        <div class="sub" id="lblRTP">機械割</div>
+        <div id="outRTP" class="big mono">-</div>
+        <div id="outRTPSub" class="sub mono">
+</div>
+      </div>
+      <div id="wageBlock">
+        <div class="sub">時給（円ベース）</div>
+        <div id="outWage" class="big mono">-</div>
+        <div id="outWageReplayWrap" style="display:none;margin-top:10px">
+          <div class="sub">時給（枚ベース・再プレイ・円換算）</div>
+          <div id="outWageReplay" class="big mono" style="font-size:1.35rem">-</div>
+        </div>
+        <div id="outWageSub" class="sub mono"></div>
+      </div>
+    </div>
+
+
+    <div class="divider"></div>
+
+    <div class="small mono" id="detail"></div>
+  </div>
+</div>
+
+<script>
+
+(() => {
+  "use strict";
+
+  const $ = (id) => document.getElementById(id);
+
+  const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
+
+  const toNum = (el, def = NaN) => {
+    if (!el) return def;
+    const v = String(el.value ?? "").trim();
+    if (v === "") return def;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : def;
+  };
+
+  const fmtYen = (n) => {
+    if (!Number.isFinite(n)) return "-";
+    const s = Math.round(n).toLocaleString("ja-JP");
+    return (n >= 0 ? "+" : "") + s + "円";
+  };
+
+  const fmtCoins = (n) => {
+    if (!Number.isFinite(n)) return "-";
+    const v = Math.round(n * 10) / 10;
+    const s = v.toLocaleString("ja-JP", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+    return (v >= 0 ? "+" : "") + s + "枚";
+  };
+
+  const fmtPct = (n) => {
+    if (!Number.isFinite(n)) return "-";
+    return n.toFixed(2) + "%";
+  };
+
+  const fmtG = (n) => {
+    if (!Number.isFinite(n)) return "-";
+    return Math.round(n).toLocaleString("ja-JP");
+  };
+
+  function showMsg(id, msg) {
+    const el = $(id);
+    if (!el) return;
+    el.textContent = msg || "";
+    el.classList.toggle("hide", !msg);
+  }
+  function showErr(msg) { showMsg("err", msg); }
+  function showWarn(msg) { showMsg("warn", msg); }
+
+  function setText(id, text) {
+    const el = $(id);
+    if (!el) return;
+    el.textContent = text;
+  }
+
+  function toggleMode() {
+    const mode = $("mode").value;
+
+    // 非等価入力（details）
+    const naDetails = $("naDetails");
+    if (naDetails) {
+      naDetails.classList.toggle("hidden", mode !== "na");
+      if (mode === "na") naDetails.open = true;
+      else naDetails.open = false;
+    }
+
+    // 機械割は等価のみ表示（等価は時給はUIで隠す）
+    const rtpBlock = $("rtpBlock");
+    if (rtpBlock) rtpBlock.style.display = (mode === "eq") ? "" : "none";
+
+    // 機械割算出（等価のみ）パネルは等価時のみ表示（ただし入力欄はOFFなら閉じる）
+    const panel = $("spinCheckPanel");
+    const chk = $("chkRtpCalc");
+    if (panel) panel.style.display = (mode === "eq") ? "" : "none";
+    if (mode !== "eq" && chk) chk.checked = false;
+
+    syncRtpCalcUI();
+  }
+
+  function syncRtpCalcUI() {
+    const chk = $("chkRtpCalc");
+    const fields = $("rtpCalcFields");
+    const on = !!(chk && chk.checked);
+
+    if (fields) fields.classList.toggle("hidden", !on);
+
+    // 算出モードON時はRTP手入力をロック
+    const rtpR = $("rtpR");
+    const rtpK = $("rtpK");
+    if (rtpR) rtpR.disabled = on;
+    if (rtpK) rtpK.disabled = on;
+
+    if (!on) {
+      ["totalGR", "totalGK", "rtpR_calc_out", "rtpK_calc_out"].forEach(id => setText(id, "-"));
+    }
+  }
+
+  function requireFinite(n, label) {
+    if (!Number.isFinite(n)) throw new Error(`${label}の入力が不足しています。`);
+    return n;
+  }
+
+  function calc() {
+    const warnings = [];
+
+    const mode = $("mode").value;
+    const p = clamp(toNum($("pReset"), 50), 0, 100) / 100;
+
+    // 入力（等価）
+    const evR = requireFinite(toNum($("evR")), "EV（リセット）");
+    const evK = requireFinite(toNum($("evK")), "EV（据え置き）");
+    let rtpR_pct = requireFinite(toNum($("rtpR")), "機械割（リセット）");
+    let rtpK_pct = requireFinite(toNum($("rtpK")), "機械割（据え置き）");
+
+    // 表示用
+    const speed = Math.max(1, toNum($("gph"), 800));
+
+    // ブレンド（等価ベース）
+    const evEq = evR * p + evK * (1 - p);
+
+    const yenPerSpin = 60; // 3枚掛け×20円（等価）基準
+
+    // --- 機械割算出（等価のみ） ---
+    const chkRtpCalc = $("chkRtpCalc");
+    const rtpCalcOn = (mode === "eq") && !!(chkRtpCalc && chkRtpCalc.checked);
+
+    // 投資（円）と回転数（G）
+    let invYenR = NaN, invYenK = NaN;
+    let spinsR = NaN, spinsK = NaN;
+
+    if (rtpCalcOn) {
+      const hitR = Math.max(1, requireFinite(toNum($("hitR_calc")), "初当たり（リセット）"));
+      const hitK = Math.max(1, requireFinite(toNum($("hitK_calc")), "初当たり（据え置き）"));
+      const tyR  = Math.max(0, requireFinite(toNum($("tyR_calc")), "TY（リセット）"));
+      const tyK  = Math.max(0, requireFinite(toNum($("tyK_calc")), "TY（据え置き）"));
+      const jzR  = Math.max(0.0001, requireFinite(toNum($("junzoR_calc")), "純増（リセット）"));
+      const jzK  = Math.max(0.0001, requireFinite(toNum($("junzoK_calc")), "純増（据え置き）"));
+
+      const atGR = tyR / jzR;
+      const atGK = tyK / jzK;
+      const totalGR = hitR + atGR;
+      const totalGK = hitK + atGK;
+
+      invYenR = totalGR * yenPerSpin;
+      invYenK = totalGK * yenPerSpin;
+      spinsR = totalGR;
+      spinsK = totalGK;
+
+      // 逆算機械割：RTP = 1 + EV / 投資
+      const rtpR = (invYenR > 0) ? (1 + (evR / invYenR)) * 100 : NaN;
+      const rtpK = (invYenK > 0) ? (1 + (evK / invYenK)) * 100 : NaN;
+
+      rtpR_pct = rtpR;
+      rtpK_pct = rtpK;
+
+      // 入力欄へ上書き（通常計算に流す）
+      if ($("rtpR")) $("rtpR").value = Number.isFinite(rtpR_pct) ? rtpR_pct.toFixed(2) : "";
+      if ($("rtpK")) $("rtpK").value = Number.isFinite(rtpK_pct) ? rtpK_pct.toFixed(2) : "";
+
+      // 表示
+      setText("totalGR", fmtG(totalGR));
+      setText("totalGK", fmtG(totalGK));
+      setText("rtpR_calc_out", Number.isFinite(rtpR) ? rtpR.toFixed(2) : "-");
+      setText("rtpK_calc_out", Number.isFinite(rtpK) ? rtpK.toFixed(2) : "-");
+    } else {
+      // --- 回転数を「EV＋機械割」から逆算（デフォ） ---
+      const rtpR = rtpR_pct / 100;
+      const rtpK = rtpK_pct / 100;
+
+      const eps = 0.0005; // 100%±0.05% 付近は不安定（0割回避）
+      const denomR = rtpR - 1;
+      const denomK = rtpK - 1;
+
+      if (Number.isFinite(denomR) && Math.abs(denomR) < eps) warnings.push("リセット側の機械割が100%付近のため、回転数/時給が不安定になりやすいです。");
+      if (Number.isFinite(denomK) && Math.abs(denomK) < eps) warnings.push("据え置き側の機械割が100%付近のため、回転数/時給が不安定になりやすいです。");
+
+      const safe = (d) => (Math.abs(d) < eps ? (d < 0 ? -eps : eps) : d);
+
+      invYenR = Math.abs(evR / safe(denomR));
+      invYenK = Math.abs(evK / safe(denomK));
+      spinsR = invYenR / yenPerSpin;
+      spinsK = invYenK / yenPerSpin;
+    }
+
+    // 混合（等価ベース）
+    const invYenEq = invYenR * p + invYenK * (1 - p);
+    const spinsEq = spinsR * p + spinsK * (1 - p);
+
+    if (!Number.isFinite(invYenEq) || invYenEq <= 0) throw new Error("期待投資の算出に失敗しました（機械割が100%に近すぎる可能性があります）。");
+    if (!Number.isFinite(spinsEq) || spinsEq <= 0) throw new Error("期待回転数の算出に失敗しました（入力値を確認してください）。");
+
+    // 混合機械割（等価）：推定回転数で重み付け
+    const wR = spinsR * p;
+    const wK = spinsK * (1 - p);
+    const denomW = wR + wK;
+    const rtpMixBySpins = (denomW > 0)
+      ? ((wR * rtpR_pct + wK * rtpK_pct) / denomW)
+      : NaN;
+    const rtpEq = Number.isFinite(rtpMixBySpins)
+      ? rtpMixBySpins
+      : (1 + (evEq / invYenEq)) * 100;
+
+    // 等価ベース時給（参考）
+    const wageEq = (evEq / spinsEq) * speed;
+
+    // 枚ベース（差枚）
+    const coinEq = 20;
+    let profitCoins = evEq / coinEq;
+    let wageCoins = wageEq / coinEq;
+
+    // 出力（最終：円ベース）
+    let ev = evEq;
+    let rtp = rtpEq;
+    let wage = wageEq;
+    let coinEx = coinEq;
+    let showAlt = false;
+    let detailHtml = "";
+
+    if (mode === "na") {
+      // 非等価は入力必須
+      const lendCoins = Math.max(1, requireFinite(toNum($("lendCoins")), "貸出（枚/1000円）"));
+      const exRateRaw = requireFinite(toNum($("exRate")), "交換率（枚/100円）");
+      const exRateAdj = (exRateRaw >= 20) ? (exRateRaw / 10) : exRateRaw;
+      const exRate = Math.max(0.1, exRateAdj);
+      if ($("exRate")) $("exRate").value = exRate.toFixed(2);
+
+      const spinsPer1k = Math.max(1, toNum($("spinsPer1k"), 34.7));
+      const holdCoins = Math.max(0, toNum($("holdCoins"), 0));
+
+      const hitR = Math.max(1, requireFinite(toNum($("hitR")), "初当たり（リセット）"));
+      const hitK = Math.max(1, requireFinite(toNum($("hitK")), "初当たり（据え置き）"));
+
+      coinEx = 100 / exRate; // 円/枚（交換）
+      const spinsPerCoin = spinsPer1k / 50; // 50枚=1000円（等価）基準
+
+      // 期待投資枚数（等価ベース）
+      const needCoinsR = hitR / spinsPerCoin;
+      const needCoinsK = hitK / spinsPerCoin;
+
+      const holdUseR = Math.min(holdCoins, needCoinsR);
+      const holdUseK = Math.min(holdCoins, needCoinsK);
+
+      const cashCoinsR = Math.max(0, needCoinsR - holdUseR);
+      const cashCoinsK = Math.max(0, needCoinsK - holdUseK);
+
+      const invR = cashCoinsR * coinEq;
+      const invK = cashCoinsK * coinEq;
+
+      const invEq = invR * p + invK * (1 - p);
+      const cashCoins = cashCoinsR * p + cashCoinsK * (1 - p);
+      const holdUse = holdUseR * p + holdUseK * (1 - p);
+
+      const coinCostCash = 1000 / lendCoins; // 円/枚（現金購入）
+      const investGap = cashCoins * (coinEq - coinCostCash);
+
+      profitCoins = evEq / coinEq;
+      const payoutCoinsEq = Math.max(0, (cashCoins + holdUse) + profitCoins);
+      const payoutGap = payoutCoinsEq * (coinEx - coinEq);
+
+      ev = evEq + investGap + payoutGap;
+
+      rtp = (invEq > 0) ? ((invEq + ev) / invEq) * 100 : NaN;
+
+      const expSpins = hitR * p + hitK * (1 - p);
+      wage = (expSpins > 0) ? (ev / expSpins) * speed : NaN;
+      wageCoins = (expSpins > 0) ? (profitCoins / expSpins) * speed : NaN;
+
+      if (holdUse > 0 && expSpins > 0) showAlt = true;
+
+      detailHtml = `
+        <div class="muted">非等価（近似）の内訳（目安）</div>
+        <div class="kv"><span>等価EV（混合）</span><span>${fmtYen(evEq)}</span></div>
+        <div class="kv"><span>期待投資（現金分・等価換算）</span><span>${fmtYen(invEq)}</span></div>
+        <div class="kv"><span>交換価値</span><span>1枚 = ${coinEx.toFixed(2)}円</span></div>
+        <div class="kv"><span>投資ギャップ</span><span>${fmtYen(investGap)}</span></div>
+        <div class="kv"><span>回収ギャップ</span><span>${fmtYen(payoutGap)}</span></div>
+        <div class="hr"></div>
+        <div class="kv"><span>補正後EV</span><span><b>${fmtYen(ev)}</b></span></div>
+      `;
+    }
+
+    return {
+      mode,
+      coinEx,
+      ev,
+      rtp,
+      wage,
+      evCoins: profitCoins,
+      wageCoins,
+      detailHtml,
+      showAlt,
+      warnings
+    };
+  }
+
+  function render(res) {
+    // v2: mode class
+    document.body.classList.toggle("mode-eq", res.mode === "eq");
+
+    $("outEV").textContent = fmtYen(res.ev);
+    $("outEVSub").textContent = (res.mode === "eq") ? "等価" : "非等価・近似（ギャップ補正）";
+
+    // 枚ベース（再プレイ・円換算）の表示：非等価かつ持ちメダル使用時のみ
+    const evReplayWrap = $("outEVReplayWrap");
+    const wageReplayWrap = $("outWageReplayWrap");
+    const evReplayEl = $("outEVReplay");
+    const wageReplayEl = $("outWageReplay");
+
+    if (res.mode === "na" && res.showAlt) {
+      const evReplayYen = (Number.isFinite(res.evCoins) && Number.isFinite(res.coinEx)) ? res.evCoins * res.coinEx : NaN;
+      const wageReplayYen = (Number.isFinite(res.wageCoins) && Number.isFinite(res.coinEx)) ? res.wageCoins * res.coinEx : NaN;
+      if (evReplayWrap) evReplayWrap.style.display = "";
+      if (wageReplayWrap) wageReplayWrap.style.display = "";
+      if (evReplayEl) evReplayEl.textContent = fmtYen(evReplayYen);
+      if (wageReplayEl) wageReplayEl.textContent = fmtYen(wageReplayYen);
+    } else {
+      if (evReplayWrap) evReplayWrap.style.display = "none";
+      if (wageReplayWrap) wageReplayWrap.style.display = "none";
+    }
+
+    // 機械割（等価のみ）
+    const rtpBlock = $("rtpBlock");
+    if (rtpBlock && rtpBlock.style.display !== "none") {
+      $("outRTP").textContent = fmtPct(res.rtp);
+      $("outRTPSub").textContent = "等価";
+    }
+
+    // 時給（非等価のみ表示。等価はCSSで隠れる）
+    $("outWage").textContent = fmtYen(res.wage);
+    $("outWageSub").textContent = (res.mode === "eq") ? "参考（EV＋機械割→回転数逆算）" : "参考（近似）";
+
+    $("detail").innerHTML = res.detailHtml || "";
+
+    // warnings
+    showWarn((res.warnings && res.warnings.length) ? ("※注意：" + res.warnings.join(" / ")) : "");
+  }
+
+  function onCalc() {
+    showErr("");
+    showWarn("");
+    try {
+      const res = calc();
+      render(res);
+    } catch (e) {
+      showErr(String(e && e.message ? e.message : e));
+      alert("計算に失敗しました。入力値を確認してください。");
+    }
+  }
+
+  function wire() {
+    $("btn").addEventListener("click", onCalc);
+    $("mode").addEventListener("change", toggleMode);
+
+    const spinChk = $("chkRtpCalc");
+    if (spinChk) spinChk.addEventListener("change", syncRtpCalcUI);
+
+    // 初期状態：必要な時だけ展開
+    syncRtpCalcUI();
+    toggleMode();
+  }
+
+  document.addEventListener("DOMContentLoaded", wire);
+})();
+
+</script>
+
+<section style="margin-top:24px;padding:16px;border:1px solid #e5e7eb;border-radius:8px;background:#fafafa">
+  <h3>期待値・時給の見方について（重要）</h3>
+  <p>
+    本ツールでは <b>円ベース</b> の期待値（等価・非等価）を主表示としています。
+    ただし、<b>持ちメダルが十分にある場合</b>、実践上の体感は
+    <b>差枚（メダルベース）</b>で判断する方が適切になるケースがあります。
+  </p>
+  <ul>
+    <li>
+      <b>等価</b>：投資・回収ともに20円/枚のため、円と枚の評価が一致します。
+    </li>
+    <li>
+      <b>非等価（持ちメダル十分）</b>：
+      投資ギャップは発生せず、<u>換金ギャップのみ</u>を受けます。
+      この場合、円ベースではマイナスが大きく見えても、
+      枚数ベースでは差が小さくなる（または同等）ことがあります。
+    </li>
+  </ul>
+  <p>
+    そのため、<b>非等価・持ちメダル十分</b>の条件では、
+    「円ベース（財布）」と「枚数ベース（出玉）」の両方を意識して
+    期待値・時給を判断してください。
+  </p>
+  <p style="margin-top:8px;color:#b45309">
+    ※機械割が100%付近（目安：99.5%〜100.5%）の場合、
+    EVが小さいため回転数や初当たり確率のわずかな差で
+    時給が大きくブレることがあります。時給表示は参考値としてご利用ください。
+  </p>
+</section>
+
+</body>
+</html>
