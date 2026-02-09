@@ -529,10 +529,56 @@ updateJsonView();
   }
   function msg(el,text){ if(!el) return; el.textContent=text; clearTimeout(el._t); el._t=setTimeout(()=>{el.textContent="";}, 3500); }
   refreshPresetSelect();
+  // --- UI <-> model snapshot for presets ---
+  const UI_FIELD_IDS = [
+    "ptPerG","spinPer1k","speedGph","ty","junzo","directDenom",
+    "startCycle","startPt","throughCount",
+    "lendCoinsPer1k","exchCoinsPer1k","holdCoins",
+    "preType","preG","prePtMin","prePtMax","prePtPick",
+    "selMachineTpl","selModeDist","selCycleDist","selPt1","selPt2p","selPtShort","selModeTrans","selModeAtLeast",
+    "modeAtLeastPct","ceilFrom","ceilTo","shortThPt"
+  ];
+  const UI_CHECKBOX_IDS = ["chkModeAtLeast","chkCeilShort"];
+
+  function snapshotUIToModel(){
+    dataModel.ui = dataModel.ui || {};
+    UI_FIELD_IDS.forEach(id=>{
+      const el = document.getElementById(id);
+      if(!el) return;
+      // Keep numbers as numbers when possible
+      const v = el.value;
+      const num = (el instanceof HTMLInputElement && el.type === "number") ? (v==="" ? "" : Number(v)) : v;
+      dataModel.ui[id] = (el instanceof HTMLInputElement && el.type === "number") ? num : v;
+    });
+    UI_CHECKBOX_IDS.forEach(id=>{
+      const el = document.getElementById(id);
+      if(!el) return;
+      dataModel.ui[id] = !!el.checked;
+    });
+  }
+
+  function applyModelToUI(){
+    const ui = dataModel.ui || {};
+    UI_FIELD_IDS.forEach(id=>{
+      if(!(id in ui)) return;
+      const el = document.getElementById(id);
+      if(!el) return;
+      const v = ui[id];
+      el.value = (v===null || v===undefined) ? "" : String(v);
+    });
+    UI_CHECKBOX_IDS.forEach(id=>{
+      if(!(id in ui)) return;
+      const el = document.getElementById(id);
+      if(!el) return;
+      el.checked = !!ui[id];
+    });
+  }
+
 
   document.getElementById("savePreset")?.addEventListener("click", ()=>{
     const name=document.getElementById("presetName").value.trim();
     if(!name) return msg(document.getElementById("presetMsg"), "プリセット名を入れてね");
+    snapshotUIToModel();
     const presets=loadAllPresets(); presets[name]=dataModel; saveAllPresets(presets); refreshPresetSelect();
     msg(document.getElementById("presetMsg"), `保存しました：${name}`);
   });
@@ -543,6 +589,7 @@ updateJsonView();
     dataModel=presets[k]; updateJsonView();
     document.getElementById("presetName").value=k;
     refreshCalcSelectors();
+    applyModelToUI();
     msg(document.getElementById("presetMsg"), `読み込みました：${k}`);
   });
   document.getElementById("deletePreset")?.addEventListener("click", ()=>{
@@ -554,6 +601,7 @@ updateJsonView();
     msg(document.getElementById("presetMsg"), `削除しました：${k}`);
   });
   document.getElementById("exportPreset")?.addEventListener("click", ()=>{
+    snapshotUIToModel();
     const name=document.getElementById("presetName").value.trim() || "preset";
     const blob=new Blob([JSON.stringify(dataModel,null,2)],{type:"application/json"});
     const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=`${name}.json`; a.click();
@@ -563,7 +611,7 @@ updateJsonView();
   document.getElementById("importPresetBtn")?.addEventListener("click", ()=> document.getElementById("importFile")?.click());
   document.getElementById("importFile")?.addEventListener("change", async (e)=>{
     const f=e.target.files?.[0]; if(!f) return;
-    try{ const obj=JSON.parse(await f.text()); dataModel=obj; updateJsonView(); refreshCalcSelectors(); persistTables(); refreshContextSelect(); msg(document.getElementById("presetMsg"), "インポートしました（必要なら名前を付けて保存）"); }
+    try{ const obj=JSON.parse(await f.text()); dataModel=obj; updateJsonView(); refreshCalcSelectors(); applyModelToUI(); persistTables(); refreshContextSelect(); msg(document.getElementById("presetMsg"), "インポートしました（必要なら名前を付けて保存）"); }
     catch{ alert("インポート失敗：JSON形式を確認してね"); }
     finally{ e.target.value=""; }
   });
@@ -1785,6 +1833,7 @@ document.getElementById("btnCalc").addEventListener("click", (e)=>{
     catch(err){ console.error(err); const cm=document.getElementById("calcMsg"); if(cm) cm.textContent="計算エラー: "+(err&&err.message?err.message:String(err)); return; }
     const name=document.getElementById("presetName").value.trim();
     if(!name) return msg(document.getElementById("presetMsg"), "上書き保存するならプリセット名を入れてね");
+    snapshotUIToModel();
     const presets=loadAllPresets(); presets[name]=dataModel; saveAllPresets(presets); refreshPresetSelect();
     msg(document.getElementById("presetMsg"), `上書き保存しました：${name}`);
   });
