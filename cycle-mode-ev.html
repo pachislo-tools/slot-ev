@@ -257,7 +257,7 @@
       </div>
       
       <div>
-        <label>示唆：モード◯以上の割合</label>
+        <label>視差：モード◯以上の割合</label>
         <div style="display:flex;gap:8px;align-items:center;">
           <input id="chkModeAtLeast" type="checkbox" style="width:auto;margin:0;" />
           <span class="muted" style="font-size:13px;">適用</span>
@@ -303,6 +303,18 @@
         <label>短縮時 周期pt分布</label>
         <select id="selPtShort"></select>
         <div class="muted">※未選択なら短縮なし</div>
+      </div>
+    </div>
+
+    <div class="row2" style="margin-top:10px;">
+      <div>
+        <label>短縮時 周期当選分布（次回周期〜）</label>
+        <select id="selCycleShort"></select>
+        <div class="muted">※「〇pt以上で次回周期当選振り分けが変わる」機種用。未選択なら当選分布は変わりません。</div>
+      </div>
+      <div>
+        <label class="muted">メモ</label>
+        <div class="muted">「判定pt（以上）」に到達したケースだけ、<b>次の周期</b>からこの当選分布で計算します（1回だけ）。</div>
       </div>
     </div>
 
@@ -481,12 +493,9 @@
   }
   function saveAllTables(obj){ localStorage.setItem(LS_TABLES_KEY, JSON.stringify(obj)); }
   function mergeTablesIntoModel(tables){
-    // 旧バージョン互換：cycleDist保存をhitRateへ移行
-    if(tables && tables.cycleDist && !tables.hitRate){ tables.hitRate = tables.cycleDist; }
-
     // 安全策：内蔵テーブル（DEFAULT_DATAに存在するキー）は上書きしない。
     // これにより「同名で保存したカスタム」が内蔵テンプレを壊す事故を防ぎます。
-    const types = ["modeDist","ptDist","hitRate","modeTrans"];
+    const types = ["modeDist","ptDist","cycleDist","modeTrans"];
     types.forEach(t=>{
       if(!tables[t]) return;
       dataModel[t] = dataModel[t] || {};
@@ -518,7 +527,28 @@ updateJsonView();
   const LS_KEY = "ev_tool_presets_v1";
   function loadAllPresets(){ try { return JSON.parse(localStorage.getItem(LS_KEY) || "{}"); } catch { return {}; } }
   function saveAllPresets(obj){ localStorage.setItem(LS_KEY, JSON.stringify(obj)); }
-  function refreshPresetSelect(){
+  
+  function normalizePresetModel(presetObj){
+    // Always start from DEFAULT_DATA to keep built-in templates intact.
+    const base = JSON.parse(JSON.stringify(DEFAULT_DATA));
+
+    if(presetObj && typeof presetObj === "object"){
+      // tables
+      const types = ["modeDist","ptDist","hitRate","cycleDist","modeTrans"];
+      types.forEach(t=>{
+        if(presetObj[t]) base[t] = presetObj[t];
+      });
+
+      // backward compatibility
+      if(base.cycleDist && !base.hitRate) base.hitRate = base.cycleDist;
+      if(presetObj.cycleDist && !presetObj.hitRate) base.hitRate = presetObj.cycleDist;
+
+      // UI snapshot
+      if(presetObj._ui) base._ui = presetObj._ui;
+    }
+    return base;
+  }
+function refreshPresetSelect(){
     const sel=document.getElementById("presetSelect");
     if(!sel) return;
     const presets=loadAllPresets();
@@ -529,64 +559,61 @@ updateJsonView();
   }
   function msg(el,text){ if(!el) return; el.textContent=text; clearTimeout(el._t); el._t=setTimeout(()=>{el.textContent="";}, 3500); }
   refreshPresetSelect();
-  // --- UI <-> model snapshot for presets ---
-  const UI_FIELD_IDS = [
-    "ptPerG","spinPer1k","speedGph","ty","junzo","directDenom",
-    "startCycle","startPt","throughCount",
-    "lendCoinsPer1k","exchCoinsPer1k","holdCoins",
-    "preType","preG","prePtMin","prePtMax","prePtPick",
-    "selMachineTpl","selModeDist","selCycleDist","selPt1","selPt2p","selPtShort","selModeTrans","selModeAtLeast",
-    "modeAtLeastPct","ceilFrom","ceilTo","shortThPt"
-  ];
-  const UI_CHECKBOX_IDS = ["chkModeAtLeast","chkCeilShort"];
 
+  // --- Preset UI sync (save/load) ---
   function snapshotUIToModel(){
-    dataModel.ui = dataModel.ui || {};
-    UI_FIELD_IDS.forEach(id=>{
-      const el = document.getElementById(id);
-      if(!el) return;
-      // Keep numbers as numbers when possible
-      const v = el.value;
-      const num = (el instanceof HTMLInputElement && el.type === "number") ? (v==="" ? "" : Number(v)) : v;
-      dataModel.ui[id] = (el instanceof HTMLInputElement && el.type === "number") ? num : v;
+    dataModel._ui = dataModel._ui || {};
+    const U = dataModel._ui;
+
+    // selects (calc area)
+    const selIds = ["selMachineTpl","selModeDist","selCycleDist","selPt1","selPt2p","selPtShort","selModeTrans","selModeAtLeast","startCycle","preType","prePtPick", "selCycleShort"];
+    selIds.forEach(id=>{
+      const el=document.getElementById(id);
+      if(el) U[id]=el.value;
     });
-    UI_CHECKBOX_IDS.forEach(id=>{
-      const el = document.getElementById(id);
-      if(!el) return;
-      dataModel.ui[id] = !!el.checked;
+
+    // inputs
+    const inpIds = ["ptPerG","spinPer1k","speedGph","ty","junzo","directDenom","preG","prePtMin","prePtMax","prePtCustom","throughCount","startPt","modeAtLeastPct","shortThPt","ceilFrom","ceilTo","lendCoinsPer1k","exchCoinsPer1k","holdCoins","betPerG"];
+    inpIds.forEach(id=>{
+      const el=document.getElementById(id);
+      if(el) U[id]=el.value;
     });
+
+    // checkboxes
+    const chkIds = ["chkModeAtLeast","chkCeilShort"];
+    chkIds.forEach(id=>{
+      const el=document.getElementById(id);
+      if(el) U[id]=!!el.checked;
+    });
+
+    return dataModel;
   }
 
   function applyModelToUI(){
-    const ui = dataModel.ui || {};
-    UI_FIELD_IDS.forEach(id=>{
-      if(!(id in ui)) return;
+    const U = dataModel && dataModel._ui;
+    if(!U) return;
+
+    // Inputs first
+    Object.keys(U).forEach(id=>{
       const el = document.getElementById(id);
       if(!el) return;
-      const v = ui[id];
-      el.value = (v===null || v===undefined) ? "" : String(v);
-    });
-    UI_CHECKBOX_IDS.forEach(id=>{
-      if(!(id in ui)) return;
-      const el = document.getElementById(id);
-      if(!el) return;
-      el.checked = !!ui[id];
+      if(el.type === "checkbox") el.checked = !!U[id];
+      else el.value = U[id];
     });
   }
-
 
   document.getElementById("savePreset")?.addEventListener("click", ()=>{
     const name=document.getElementById("presetName").value.trim();
     if(!name) return msg(document.getElementById("presetMsg"), "プリセット名を入れてね");
     snapshotUIToModel();
-    const presets=loadAllPresets(); presets[name]=dataModel; saveAllPresets(presets); refreshPresetSelect();
+    const presets=loadAllPresets(); presets[name]=JSON.parse(JSON.stringify(dataModel)); saveAllPresets(presets); refreshPresetSelect();
     msg(document.getElementById("presetMsg"), `保存しました：${name}`);
   });
   document.getElementById("loadPreset")?.addEventListener("click", ()=>{
     const k=document.getElementById("presetSelect").value;
     if(!k) return msg(document.getElementById("presetMsg"), "読み込むプリセットを選んでね");
     const presets=loadAllPresets(); if(!presets[k]) return msg(document.getElementById("presetMsg"), "見つかりませんでした");
-    dataModel=presets[k]; updateJsonView();
+    dataModel = normalizePresetModel(presets[k]); updateJsonView();
     document.getElementById("presetName").value=k;
     refreshCalcSelectors();
     applyModelToUI();
@@ -601,7 +628,6 @@ updateJsonView();
     msg(document.getElementById("presetMsg"), `削除しました：${k}`);
   });
   document.getElementById("exportPreset")?.addEventListener("click", ()=>{
-    snapshotUIToModel();
     const name=document.getElementById("presetName").value.trim() || "preset";
     const blob=new Blob([JSON.stringify(dataModel,null,2)],{type:"application/json"});
     const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=`${name}.json`; a.click();
@@ -611,7 +637,7 @@ updateJsonView();
   document.getElementById("importPresetBtn")?.addEventListener("click", ()=> document.getElementById("importFile")?.click());
   document.getElementById("importFile")?.addEventListener("change", async (e)=>{
     const f=e.target.files?.[0]; if(!f) return;
-    try{ const obj=JSON.parse(await f.text()); dataModel=obj; updateJsonView(); refreshCalcSelectors(); applyModelToUI(); persistTables(); refreshContextSelect(); msg(document.getElementById("presetMsg"), "インポートしました（必要なら名前を付けて保存）"); }
+    try{ const obj=JSON.parse(await f.text()); dataModel=obj; updateJsonView(); refreshCalcSelectors(); persistTables(); refreshContextSelect(); msg(document.getElementById("presetMsg"), "インポートしました（必要なら名前を付けて保存）"); }
     catch{ alert("インポート失敗：JSON形式を確認してね"); }
     finally{ e.target.value=""; }
   });
@@ -630,8 +656,7 @@ updateJsonView();
   
   // --- Context (table) save/load UI ---
   function getCtxKeysForType(type){
-    const key = (type==="cycleDist") ? "hitRate" : type;
-    const obj = (dataModel[key]||{});
+    const obj = (dataModel[type]||{});
     return Object.keys(obj).sort((a,b)=>a.localeCompare(b,'ja'));
   }
   function refreshContextSelect(){
@@ -662,23 +687,15 @@ updateJsonView();
       return [["モード","割合"], ...Object.keys(dist).map(k=>[k, Math.round(dist[k]*100)+"%"])];
     }
     if(type==="cycleDist"){
-      // hitRate[ctxName] : { mode : [{key:"1周期目", p:0.2}, ...], ... }
-      const cd = (dataModel.hitRate||{})[ctxName];
+      // minimal model: mode x cycle hit-rate table (stores matrix-like object in dataModel.cycleDist[ctxName])
+      const cd = (dataModel.cycleDist||{})[ctxName];
       if(!cd) return [[""]];
-      const modes = Object.keys(cd);
-      const keysSet = new Set();
-      modes.forEach(m=> (cd[m]||[]).forEach(it=>{ if(it && it.key!=null) keysSet.add(String(it.key)); }));
-      const cycleKeys = Array.from(keysSet).sort((a,b)=> (parseCycleNum(a)||0) - (parseCycleNum(b)||0));
-      const header = ["", ...modes];
-      const rows = cycleKeys.map(k=>{
-        const row=[k];
-        modes.forEach(m=>{
-          const it = (cd[m]||[]).find(x=> String(x.key)===k);
-          row.push(Math.round(((it?.p)||0)*100)+"%");
-        });
-        return row;
-      });
-      return [header, ...rows];
+      if(cd.modes && cd.cycles && cd.matrix){
+        const header=["", ...cd.cycles];
+        const rows = cd.modes.map(m=>[m, ...(cd.cycles.map(c=>Math.round((cd.matrix[m]?.[c]||0)*100)+"%"))]);
+        return [header, ...rows];
+      }
+      return [[""]];
     }
     if(type==="ptDist"){
       // ptDist[ctxName][mode]=[{range,min,max,p}]
@@ -702,7 +719,7 @@ updateJsonView();
       const rows = (mt.fromModes||[]).map(f=>{
         const line=[f];
         toModes.forEach(t=>{
-          let v = (mt.matrix?.[f]?.[t])||0;
+          let v = (mt.matrix && mt.matrix[f] && mt.matrix[f][t])||0;
           if(!mt.matrix && Array.isArray(mt.mat)){
             const i=(mt.fromModes||[]).indexOf(f);
             const j=(mt.toModes||[]).indexOf(t);
@@ -721,7 +738,6 @@ updateJsonView();
 
   function loadContextIntoEditor(){
     const type = document.getElementById("tableType").value;
-    const keyType = (type==="cycleDist") ? "hitRate" : type;
     const sel = document.getElementById("contextSelect");
     const ctxName = (sel?.value || "").trim();
     if(!ctxName) return setMsg("applyMsg", "保存済みがありません。");
@@ -732,12 +748,10 @@ updateJsonView();
   }
 
   function persistTables(){
-    // localStorage用：hitRate（周期当選分布）を保存。過去互換でcycleDistも取り込み。
-    if(!dataModel.hitRate && dataModel.cycleDist){ dataModel.hitRate = dataModel.cycleDist; }
     const payload = {
       modeDist: dataModel.modeDist||{},
       ptDist: dataModel.ptDist||{},
-      hitRate: dataModel.hitRate||{},
+      cycleDist: dataModel.cycleDist||{},
       modeTrans: dataModel.modeTrans||{},
     };
     saveAllTables(payload);
@@ -745,17 +759,16 @@ updateJsonView();
 
   function renameContext(){
     const type = document.getElementById("tableType").value;
-    const keyType = (type==="cycleDist") ? "hitRate" : type;
     const sel = document.getElementById("contextSelect");
     const from = (sel?.value || "").trim();
     const to = (document.getElementById("contextName").value || "").trim();
     if(!from) return setMsg("applyMsg","名前変更したい保存済みを選んでね。");
     if(!to) return setMsg("applyMsg","新しい名前（条件名）を入力してね。");
     if(from===to) return setMsg("applyMsg","同じ名前です。");
-    dataModel[keyType] = dataModel[keyType] || {};
-    if(dataModel[keyType][to]) return setMsg("applyMsg","その名前は既に存在します。");
-    dataModel[keyType][to] = dataModel[keyType][from];
-    delete dataModel[keyType][from];
+    dataModel[type] = dataModel[type] || {};
+    if(dataModel[type][to]) return setMsg("applyMsg","その名前は既に存在します。");
+    dataModel[type][to] = dataModel[type][from];
+    delete dataModel[type][from];
     persistTables();
     updateJsonView(); refreshCalcSelectors(); persistTables(); refreshContextSelect(); refreshContextSelect();
     setMsg("applyMsg", `名前変更：${from} → ${to}`);
@@ -763,13 +776,12 @@ updateJsonView();
 
   function deleteContext(){
     const type = document.getElementById("tableType").value;
-    const keyType = (type==="cycleDist") ? "hitRate" : type;
     const sel = document.getElementById("contextSelect");
     const key = (sel?.value || "").trim();
     if(!key) return setMsg("applyMsg","削除したい保存済みを選んでね。");
     if(!confirm(`「${key}」を削除しますか？`)) return;
-    if(dataModel[keyType] && dataModel[keyType][key]){
-      delete dataModel[keyType][key];
+    if(dataModel[type] && dataModel[type][key]){
+      delete dataModel[type][key];
       persistTables();
       updateJsonView(); refreshCalcSelectors(); persistTables(); refreshContextSelect(); refreshContextSelect();
       setMsg("applyMsg", `削除：${key}`);
@@ -826,37 +838,6 @@ function renderTable(){
     else if(id==="delRow"){ if(state.tbl.data.length>1) state.tbl.data.pop(); renderTable(); setStatus(`反映: 行−（行${state.tbl.data.length}/列${(state.tbl.data[0]?.length||1)}）`); }
     else if(id==="delCol"){ if((state.tbl.data[0]?.length||0)>1) state.tbl.data.forEach(r=>r.pop()); renderTable(); setStatus(`反映: 列−（行${state.tbl.data.length}/列${(state.tbl.data[0]?.length||1)}）`); }
     else if(id==="clearTbl"){ state.tbl.data=[[""]]; renderTable(); setStatus("反映: クリア"); }
-  });
-
-  // クリックの取りこぼし対策：個別にリスナーも付ける（環境によっては親DIVの委譲クリックが効かない場合がある）
-  ["addRow","addCol","delRow","delCol"].forEach((btnId)=>{
-    const el=document.getElementById(btnId);
-    if(!el) return;
-    el.addEventListener("click", (ev)=>{
-      ev.preventDefault();
-      ev.stopPropagation();
-      ev.stopImmediatePropagation();
-      // 既存の委譲ロジックをそのまま再現
-      const cols = (state.tbl.data && state.tbl.data[0]) ? state.tbl.data[0].length : 1;
-      if(btnId==="addRow"){
-        state.tbl.data.push(Array(cols).fill(""));
-        renderTable(); return;
-      }
-      if(btnId==="addCol"){
-        state.tbl.data = state.tbl.data.map(r => r.concat([""]));
-        renderTable(); return;
-      }
-      if(btnId==="delRow"){
-        if(state.tbl.data.length<=1) return;
-        state.tbl.data.pop();
-        renderTable(); return;
-      }
-      if(btnId==="delCol"){
-        if(cols<=1) return;
-        state.tbl.data = state.tbl.data.map(r => r.slice(0, -1));
-        renderTable(); return;
-      }
-    });
   });
 
   /** Parsing helpers */
@@ -1055,7 +1036,7 @@ function renderTable(){
       }
       dataModel.hitRate = dataModel.hitRate || {};
       dataModel.hitRate[ctxName]=out;
-      updateJsonView(); refreshCalcSelectors({cycleDist:ctxName}); persistTables(); refreshContextSelect();
+      updateJsonView(); refreshCalcSelectors({cycleDist:ctxName});
       return `周期当選分布として反映：${ctxName}`;
     }
 
@@ -1157,7 +1138,8 @@ function renderTable(){
       "cycleDist": "VVV2：天井周期の振り分け（設定1）",
       "pt1": "VVV2：1周期目 規定pt分布",
       "pt2p": "VVV2：2〜6周期 規定pt分布（前回600pt以外）",
-      "ptShort": "VVV2：2〜6周期 規定pt分布（前回600pt or 特殊テーブル）"
+      "ptShort": "VVV2：2〜6周期 規定pt分布（前回600pt or 特殊テーブル）",
+      "cycleShort": ""
     },
     "inputs": {
       "ptPerG": 3.0,
@@ -1238,7 +1220,7 @@ function renderTable(){
     setSel("selPt1", S.pt1);
     setSel("selPt2p", S.pt2p);
     setSel("selPtShort", S.ptShort);
-
+    setSel("selCycleShort", S.cycleShort);
     setInp("ptPerG", I.ptPerG);
     setInp("spinPer1k", I.spinPer1k);
     setInp("ty", I.ty);
@@ -1503,21 +1485,26 @@ function renderTable(){
   
   // ===== calc engine (from v5.2) =====
   function calcForMode(opts){
-    const {startCycle, startPt, mode, cycleP, maxCycle, pt1Profile, pt2pProfile, ptShortProfile, ptPerG, coinPerG, ty, junzo, betPerG, directDenom, preType, preG, prePtMin, prePtMax, prePtPick, prePtCustom, shortThPt} = opts;
+    const {startCycle, startPt, mode, cycleP, cyclePShort, maxCycle, pt1Profile, pt2pProfile, ptShortProfile, ptPerG, coinPerG, ty, junzo, betPerG, directDenom, preType, preG, prePtMin, prePtMax, prePtPick, prePtCustom, shortThPt} = opts;
 
-    const S={};
-    for(let k=maxCycle;k>=1;k--) S[k]=(S[k+1]||0)+(cycleP[k]||0);
-    const hitProb = S[startCycle] || 0;
-    if(hitProb<=0) return {ev:0, invest:0, hitProb:0, avgHitCycle:0, expGames:0, expPt:0};
-
-    const h={};
-    for(let k=1;k<=maxCycle;k++){ 
-      const surv=S[k]||0;
-      h[k]= surv>0 ? (cycleP[k]||0)/surv : 0;
+    // ---- hazard (当選周期分布) を「通常」と「短縮（次回周期〜）」で用意 ----
+    function buildHazard(cyclePMap){
+      const S={};
+      for(let k=maxCycle;k>=1;k--) S[k]=(S[k+1]||0)+(cyclePMap[k]||0);
+      const h={};
+      for(let k=1;k<=maxCycle;k++){
+        const surv=S[k]||0;
+        h[k]= surv>0 ? (cyclePMap[k]||0)/surv : 0;
+      }
+      return {S, h};
     }
+    const hzN = buildHazard(cycleP||{});
+    const hzS = cyclePShort ? buildHazard(cyclePShort) : null;
 
-        // 期待pt（分布ベース）＋「〇pt以上で次周期天井短縮」の1回だけの状態を持つDP
-    const enableShort = (shortThPt||0) > 0 && !!ptShortProfile;
+    // ---- 短縮フラグ：判定pt到達「次の周期」だけ短縮扱い（1回だけ） ----
+    const enablePtShort = (shortThPt||0) > 0 && !!ptShortProfile;
+    const enableCycleShort = (shortThPt||0) > 0 && !!hzS;
+    const enableShort = enablePtShort || enableCycleShort;
 
     function pickArr(profileObj){
       if(!profileObj) return null;
@@ -1528,66 +1515,89 @@ function renderTable(){
       }
       return (arr && arr.length) ? arr : null;
     }
-
     function getArrForCycle(cycle, shortFlag){
-      if(shortFlag && enableShort){
+      if(shortFlag && enablePtShort){
         return pickArr(ptShortProfile);
       }
       const prof = (cycle===1) ? pt1Profile : pt2pProfile;
       return pickArr(prof);
     }
+    function getHazard(cycle, shortFlag){
+      if(shortFlag && enableCycleShort && hzS) return hzS.h[cycle] || 0;
+      return hzN.h[cycle] || 0;
+    }
+
+    // 短縮pt分布の平均（「到達pt>=閾値」のときに、当該周期内ptを短縮側平均で近似）
+    const shortAvg = (enablePtShort && enableShort) ? avgPt(ptShortProfile, mode, prePtPick) : {avg:0, ok:false};
 
     const memo = {};
     function dp(cycle, shortFlag){
-      if(cycle > maxCycle) return 0;
+      if(cycle > maxCycle) return {pHit:0, ePt:0, eCycleSum:0};
       const key = cycle + "|" + (shortFlag?1:0);
       if(memo[key]!=null) return memo[key];
 
       const arr = getArrForCycle(cycle, shortFlag);
-      if(!arr){ memo[key]=0; return 0; }
-
+      // その周期のpt分布がない場合でも、当選周期分布だけで進める（pt=0扱い）
       let sumP=0;
-      for(const it of arr){ const p=+it.p||0; if(p>0) sumP+=p; }
-      if(sumP<=0){ memo[key]=0; return 0; }
+      if(arr){
+        for(const it of arr){ const p=+it.p||0; if(p>0) sumP+=p; }
+      }
+      if(sumP<=0) sumP = 1;
 
-      // 短縮は「当該周期内で閾値以上に到達したケース」だけを短縮時分布で近似
-      const shortAvg = (enableShort && !shortFlag) ? avgPt(ptShortProfile, mode, prePtPick) : {avg:0, ok:false};
+      const hk = getHazard(cycle, shortFlag);
 
-      // この周期の「到達pt」期待値（当選でもミスでも到達する前提）
+      // 当該周期の到達pt期待値
       let expThis=0;
-      for(const it of arr){
-        const pt = pickRangePt(it, prePtPick);
-        const p=+it.p||0;
-        if(p<=0) continue;
-        const w = p/sumP;
-        const ptEff = (shortAvg.ok && pt >= shortThPt) ? shortAvg.avg : pt;
-        expThis += ptEff * w;
+      if(arr){
+        for(const it of arr){
+          const p=+it.p||0; if(p<=0) continue;
+          const w = p/sumP;
+          const pt = pickRangePt(it, prePtPick);
+          const trig = (!shortFlag && enableShort && (pt >= (shortThPt||0)));
+          const ptEff = (trig && shortAvg.ok) ? shortAvg.avg : pt;
+          expThis += ptEff * w;
+        }
       }
 
-      // ミス時：次周期へ（短縮判定は当該周期で完結させる）
-      let expMiss=0;
-      for(const it of arr){
-        const pt = pickRangePt(it, prePtPick);
-        const p=+it.p||0;
-        if(p<=0) continue;
-        const w = p/sumP;
-        const ptEff = (shortAvg.ok && pt >= shortThPt) ? shortAvg.avg : pt;
-        expMiss += w * (ptEff + dp(cycle+1, false));
+      // ミス時：次周期へ（判定pt到達なら「次の周期だけ」shortFlag=true）
+      let miss = {pHit:0, ePt:0, eCycleSum:0};
+      if(hk < 1){
+        if(arr){
+          for(const it of arr){
+            const p=+it.p||0; if(p<=0) continue;
+            const w = p/sumP;
+            const pt = pickRangePt(it, prePtPick);
+            const trig = (!shortFlag && enableShort && (pt >= (shortThPt||0)));
+            const ptEff = (trig && shortAvg.ok) ? shortAvg.avg : pt;
+            const next = dp(cycle+1, trig ? true : false);
+            miss.pHit += w * next.pHit;
+            miss.ePt  += w * (ptEff + next.ePt);
+            miss.eCycleSum += w * next.eCycleSum;
+          }
+        } else {
+          const next = dp(cycle+1, false);
+          miss = next;
+        }
       }
 
-      const hk = h[cycle] || 0; // この周期で「当選周期がここ」になる条件付き確率
-      const val = hk * expThis + (1-hk) * expMiss;
-
-      memo[key]=val;
-      return val;
+      const res = {
+        pHit: hk + (1-hk) * miss.pHit,
+        ePt:  hk * expThis + (1-hk) * miss.ePt,
+        eCycleSum: hk * cycle + (1-hk) * miss.eCycleSum
+      };
+      memo[key]=res;
+      return res;
     }
 
-    let expPt = dp(startCycle, false);
+    const r0 = dp(startCycle, false);
+
     // 打ち出しptを差し引き（同一周期内の想定）
-    expPt = Math.max(0, expPt - (startPt||0));
+    let expPt = Math.max(0, (r0.ePt||0) - (startPt||0));
+    const hitProb = r0.pHit || 0;
 
     if(ptPerG<=0 || coinPerG<=0){
-      return {ev:0, invest:0, hitProb:0, avgHitCycle:0, expGames:0, expPt:expPt};
+      const avgHitCycle = (hitProb>0) ? ((r0.eCycleSum||0)/hitProb) : 0;
+      return {ev:0, invest:0, hitProb:hitProb, avgHitCycle:avgHitCycle, expGames:0, expPt:expPt};
     }
 
     // 前兆起点ptの決定（幅対応）
@@ -1596,6 +1606,7 @@ function renderTable(){
     let prePt = (mn+mx)/2;
     if(prePtPick==="min") prePt = mn;
     else if(prePtPick==="max") prePt = mx;
+    else if(prePtPick==="custom") prePt = (+prePtCustom||0);
 
     // まずpt→G（ベース）
     let baseGames = expPt / ptPerG;
@@ -1619,9 +1630,9 @@ function renderTable(){
     }
     const totalHitProb = 1.0 - (1.0-hitProb) * (1.0-pDirectWindow);
 
-    let expGames = baseGames;
     // 直撃がある場合：周期到達までの通常G(baseGames)より前に直撃する可能性があるため、
     // 期待通常Gを E[min(T_direct, baseGames)] で近似して投資を減らす
+    let expGames = baseGames;
     if((directDenom||0)>0 && baseGames>0){
       const p = 1.0 / directDenom;
       // 幾何分布(1..∞)の打ち切り期待値：sum_{g=1..N} (1-p)^(g-1) = (1-(1-p)^N)/p
@@ -1629,23 +1640,24 @@ function renderTable(){
       // 数値誤差ガード
       expGames = Math.min(baseGames, Math.max(0, expGames));
     }
+
+    // 期待投資枚数（枚）：等価基準の coinPerG で換算（50枚/1k基準）
     const invest = expGames * coinPerG;
 
-    // 機械割（近似）：総回転Gあたりの期待差枚から算出（1G=3枚投入と近似）
-    // 例：機械割(%) = 100 * (1 + (期待差枚/G) / 3)
+    // 機械割（近似）：総回転Gあたりの期待差枚から算出（1G=betPerG枚投入と近似）
     const jz = (junzo||0)>0 ? (junzo||0) : 0;
     const atGamesExp = (jz>0) ? (totalHitProb * (ty / jz)) : 0;
     const totalGamesAll = expGames + atGamesExp;
 
     const ev = totalHitProb * ty - invest;
 
-    const machine = (totalGamesAll>0) ? (1 + (ev/totalGamesAll)/3.0) : 0;
+    const machine = (totalGamesAll>0) ? (1 + (ev/totalGamesAll)/Math.max(0.1,(betPerG||3))) : 0;
 
-    let avgHitCycle=0;
-    for(let k=startCycle;k<=maxCycle;k++) avgHitCycle += k * ((cycleP[k]||0)/hitProb);
+    const avgHitCycle = (hitProb>0) ? ((r0.eCycleSum||0)/hitProb) : 0;
 
     return {ev, invest, hitProb: totalHitProb, avgHitCycle, expGames, expPt, expGamesAll: totalGamesAll, machine};
   }
+
 
   function calcEV(){
     const modeKey=document.getElementById("selModeDist").value;
@@ -1673,6 +1685,7 @@ function renderTable(){
     const shortThPt=+document.getElementById("shortThPt").value || 0;
     const shortPtKey=(document.getElementById("selPtShort")||{}).value || "";
 
+    const shortCycleKey=(document.getElementById("selCycleShort")||{}).value || "";
     const junzo=+document.getElementById("junzo").value || 0;
     const betPerG=+document.getElementById("betPerG").value || 3;
 
@@ -1698,6 +1711,7 @@ function renderTable(){
     const pt2p = dataModel.ptDist?.[pt2Key] || null;
     const ptShort = (shortPtKey && dataModel.ptDist) ? (dataModel.ptDist[shortPtKey] || null) : null;
 
+    const cycleShortDist = (shortCycleKey && dataModel.hitRate) ? (dataModel.hitRate[shortCycleKey] || null) : null;
     if(!modeDist || !cycleDist || !pt1 || !pt2p){
       return {ok:false, reason:"必要データが足りません（モード/周期当選/pt分布を登録してね）"};
     }
@@ -1715,7 +1729,7 @@ function renderTable(){
       init = applyModeAtLeastPct(init, order, modeAtLeastBase, modeAtLeastPct/100.0);
     }
 
-    const maxCycle = inferMaxCycle(cycleDist) || 6;
+    const maxCycle = Math.max(inferMaxCycle(cycleDist) || 0, (cycleShortDist? (inferMaxCycle(cycleShortDist)||0):0)) || 6;
 
     let totalEV=0, totalInvest=0, totalHitProb=0, totalAvgHitCycle=0, totalGames=0, totalGamesAll=0, totalPt=0;
 
@@ -1724,7 +1738,8 @@ function renderTable(){
       if(initP<=0) continue;
 
       const cycleP = buildCyclePMap(cycleDist[mode] || cycleDist['共通'] || []);
-      const r = calcForMode({startCycle, startPt, mode, cycleP, maxCycle, pt1Profile:pt1, pt2pProfile:pt2p, ptPerG, coinPerG, ty, directDenom, preType, preG, prePtMin, prePtMax, prePtPick, prePtCustom, shortThPt, ptShortProfile: ptShort, junzo, betPerG});
+      const cyclePShort = cycleShortDist ? buildCyclePMap((cycleShortDist[mode] || cycleShortDist['共通'] || [])) : null;
+      const r = calcForMode({startCycle, startPt, mode, cycleP, cyclePShort, maxCycle, pt1Profile:pt1, pt2pProfile:pt2p, ptPerG, coinPerG, ty, directDenom, preType, preG, prePtMin, prePtMax, prePtPick, prePtCustom, shortThPt, ptShortProfile: ptShort, junzo, betPerG});
 
       totalEV += initP * r.ev;
       totalInvest += initP * r.invest;
@@ -1898,6 +1913,19 @@ function refreshCalcSelectors(prefer){
 
     fillSelect(document.getElementById("selModeTrans"), mtItems, prefer.modeTrans || curMt || "");
     fillSelect(document.getElementById("selCycleDist"), cdItems.length?cdItems:[{value:"", text:"(未登録)"}], cdDef);
+
+    // 短縮時の周期当選分布（未選択=変更なし）
+    (function(){
+      const sel=document.getElementById("selCycleShort");
+      if(!sel) return;
+      const items = [{value:"", text:"(未選択：変更なし)"}].concat(cdKeys.map(k=>({value:k, text:k})));
+      const cur = sel.value;
+      const def = (prefer.cycleShort && (prefer.cycleShort==="" || cdKeys.includes(prefer.cycleShort))) ? prefer.cycleShort
+               : (cur && (cur==="" || cdKeys.includes(cur))) ? cur
+               : "";
+      fillSelect(sel, items, def);
+    })();
+
     fillSelect(document.getElementById("selPt1"), pt1Items.length?pt1Items:[{value:"", text:"(未登録)"}], pt1Def);
     fillSelect(document.getElementById("selPt2p"), pt2Items.length?pt2Items:[{value:"", text:"(未登録)"}], pt2Def);
 
