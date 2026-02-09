@@ -257,7 +257,7 @@
       </div>
       
       <div>
-        <label>視差：モード◯以上の割合</label>
+        <label>示唆：モード◯以上の割合</label>
         <div style="display:flex;gap:8px;align-items:center;">
           <input id="chkModeAtLeast" type="checkbox" style="width:auto;margin:0;" />
           <span class="muted" style="font-size:13px;">適用</span>
@@ -481,9 +481,12 @@
   }
   function saveAllTables(obj){ localStorage.setItem(LS_TABLES_KEY, JSON.stringify(obj)); }
   function mergeTablesIntoModel(tables){
+    // 旧バージョン互換：cycleDist保存をhitRateへ移行
+    if(tables && tables.cycleDist && !tables.hitRate){ tables.hitRate = tables.cycleDist; }
+
     // 安全策：内蔵テーブル（DEFAULT_DATAに存在するキー）は上書きしない。
     // これにより「同名で保存したカスタム」が内蔵テンプレを壊す事故を防ぎます。
-    const types = ["modeDist","ptDist","cycleDist","modeTrans"];
+    const types = ["modeDist","ptDist","hitRate","modeTrans"];
     types.forEach(t=>{
       if(!tables[t]) return;
       dataModel[t] = dataModel[t] || {};
@@ -579,7 +582,8 @@ updateJsonView();
   
   // --- Context (table) save/load UI ---
   function getCtxKeysForType(type){
-    const obj = (dataModel[type]||{});
+    const key = (type==="cycleDist") ? "hitRate" : type;
+    const obj = (dataModel[key]||{});
     return Object.keys(obj).sort((a,b)=>a.localeCompare(b,'ja'));
   }
   function refreshContextSelect(){
@@ -610,15 +614,23 @@ updateJsonView();
       return [["モード","割合"], ...Object.keys(dist).map(k=>[k, Math.round(dist[k]*100)+"%"])];
     }
     if(type==="cycleDist"){
-      // minimal model: mode x cycle hit-rate table (stores matrix-like object in dataModel.cycleDist[ctxName])
-      const cd = (dataModel.cycleDist||{})[ctxName];
+      // hitRate[ctxName] : { mode : [{key:"1周期目", p:0.2}, ...], ... }
+      const cd = (dataModel.hitRate||{})[ctxName];
       if(!cd) return [[""]];
-      if(cd.modes && cd.cycles && cd.matrix){
-        const header=["", ...cd.cycles];
-        const rows = cd.modes.map(m=>[m, ...(cd.cycles.map(c=>Math.round((cd.matrix[m]?.[c]||0)*100)+"%"))]);
-        return [header, ...rows];
-      }
-      return [[""]];
+      const modes = Object.keys(cd);
+      const keysSet = new Set();
+      modes.forEach(m=> (cd[m]||[]).forEach(it=>{ if(it && it.key!=null) keysSet.add(String(it.key)); }));
+      const cycleKeys = Array.from(keysSet).sort((a,b)=> (parseCycleNum(a)||0) - (parseCycleNum(b)||0));
+      const header = ["", ...modes];
+      const rows = cycleKeys.map(k=>{
+        const row=[k];
+        modes.forEach(m=>{
+          const it = (cd[m]||[]).find(x=> String(x.key)===k);
+          row.push(Math.round(((it?.p)||0)*100)+"%");
+        });
+        return row;
+      });
+      return [header, ...rows];
     }
     if(type==="ptDist"){
       // ptDist[ctxName][mode]=[{range,min,max,p}]
@@ -661,6 +673,7 @@ updateJsonView();
 
   function loadContextIntoEditor(){
     const type = document.getElementById("tableType").value;
+    const keyType = (type==="cycleDist") ? "hitRate" : type;
     const sel = document.getElementById("contextSelect");
     const ctxName = (sel?.value || "").trim();
     if(!ctxName) return setMsg("applyMsg", "保存済みがありません。");
@@ -671,10 +684,12 @@ updateJsonView();
   }
 
   function persistTables(){
+    // localStorage用：hitRate（周期当選分布）を保存。過去互換でcycleDistも取り込み。
+    if(!dataModel.hitRate && dataModel.cycleDist){ dataModel.hitRate = dataModel.cycleDist; }
     const payload = {
       modeDist: dataModel.modeDist||{},
       ptDist: dataModel.ptDist||{},
-      cycleDist: dataModel.cycleDist||{},
+      hitRate: dataModel.hitRate||{},
       modeTrans: dataModel.modeTrans||{},
     };
     saveAllTables(payload);
@@ -682,16 +697,17 @@ updateJsonView();
 
   function renameContext(){
     const type = document.getElementById("tableType").value;
+    const keyType = (type==="cycleDist") ? "hitRate" : type;
     const sel = document.getElementById("contextSelect");
     const from = (sel?.value || "").trim();
     const to = (document.getElementById("contextName").value || "").trim();
     if(!from) return setMsg("applyMsg","名前変更したい保存済みを選んでね。");
     if(!to) return setMsg("applyMsg","新しい名前（条件名）を入力してね。");
     if(from===to) return setMsg("applyMsg","同じ名前です。");
-    dataModel[type] = dataModel[type] || {};
-    if(dataModel[type][to]) return setMsg("applyMsg","その名前は既に存在します。");
-    dataModel[type][to] = dataModel[type][from];
-    delete dataModel[type][from];
+    dataModel[keyType] = dataModel[keyType] || {};
+    if(dataModel[keyType][to]) return setMsg("applyMsg","その名前は既に存在します。");
+    dataModel[keyType][to] = dataModel[keyType][from];
+    delete dataModel[keyType][from];
     persistTables();
     updateJsonView(); refreshCalcSelectors(); persistTables(); refreshContextSelect(); refreshContextSelect();
     setMsg("applyMsg", `名前変更：${from} → ${to}`);
@@ -699,12 +715,13 @@ updateJsonView();
 
   function deleteContext(){
     const type = document.getElementById("tableType").value;
+    const keyType = (type==="cycleDist") ? "hitRate" : type;
     const sel = document.getElementById("contextSelect");
     const key = (sel?.value || "").trim();
     if(!key) return setMsg("applyMsg","削除したい保存済みを選んでね。");
     if(!confirm(`「${key}」を削除しますか？`)) return;
-    if(dataModel[type] && dataModel[type][key]){
-      delete dataModel[type][key];
+    if(dataModel[keyType] && dataModel[keyType][key]){
+      delete dataModel[keyType][key];
       persistTables();
       updateJsonView(); refreshCalcSelectors(); persistTables(); refreshContextSelect(); refreshContextSelect();
       setMsg("applyMsg", `削除：${key}`);
@@ -769,6 +786,8 @@ function renderTable(){
     if(!el) return;
     el.addEventListener("click", (ev)=>{
       ev.preventDefault();
+      ev.stopPropagation();
+      ev.stopImmediatePropagation();
       // 既存の委譲ロジックをそのまま再現
       const cols = (state.tbl.data && state.tbl.data[0]) ? state.tbl.data[0].length : 1;
       if(btnId==="addRow"){
@@ -988,7 +1007,7 @@ function renderTable(){
       }
       dataModel.hitRate = dataModel.hitRate || {};
       dataModel.hitRate[ctxName]=out;
-      updateJsonView(); refreshCalcSelectors({cycleDist:ctxName});
+      updateJsonView(); refreshCalcSelectors({cycleDist:ctxName}); persistTables(); refreshContextSelect();
       return `周期当選分布として反映：${ctxName}`;
     }
 
