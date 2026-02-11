@@ -367,7 +367,78 @@
 
     <!-- 最終行 -->
     <div class="row3" style="margin-top:14px;">
-      <div>
+      
+      <div style="grid-column: 1 / -1; border:1px solid #e6e6e6; border-radius:12px; padding:10px; background:#fafafa;">
+        <div style="font-weight:700; margin-bottom:6px;">天井狙いモード</div>
+        <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:center;">
+          <label style="display:flex; gap:6px; align-items:center; cursor:pointer;">
+            <input type="radio" name="tenjoMode" id="tenjoModeCycle" value="cycle" checked>
+            <span>周期天井狙い</span>
+          </label>
+          <label style="display:flex; gap:6px; align-items:center; cursor:pointer;">
+            <input type="radio" name="tenjoMode" id="tenjoModeGame" value="game">
+            <span>ゲーム数天井狙い</span>
+          </label>
+          <span class="muted" style="font-size:12px;">※切替は「累計スルー回数」の上</span>
+        </div>
+
+        <div id="paneGameCeil" style="margin-top:10px; display:none;">
+          <div class="row3">
+            <div>
+              <label>現在G数</label>
+              <input id="nowG" type="number" step="1" min="0" value="0" />
+              <div class="muted">※現時点までの累計G</div>
+            </div>
+            <div>
+              <label>天井G数</label>
+              <input id="ceilG" type="number" step="1" min="0" value="0" />
+              <div class="muted">※ゲーム数天井（到達で強制当選）</div>
+            </div>
+            <div>
+              <label>天井TY（枚）</label>
+              <input id="ceilTy" type="number" step="1" min="0" value="0" />
+              <div class="muted">※天井当選時の平均獲得枚数</div>
+            </div>
+          </div>
+          <div class="row3" style="margin-top:8px;">
+            <div>
+              <label>CZ突破率（%）</label>
+              <input id="czSuccessPct" type="number" step="0.1" min="0" max="100" value="60" />
+              <div class="muted">※60なら失敗率は40%（=0.4）</div>
+            </div>
+            <div>
+              <label class="muted">内部推定：天井までの失敗回数</label>
+              <input id="ceilK" type="number" step="1" min="0" value="0" disabled />
+              <div class="muted">※(天井G-現在G)÷平均G/当たり機会 で自動算出</div>
+            </div>
+            <div>
+              <label class="muted">ゲーム数天井ON/OFF</label>
+              <input id="chkGameCeil" type="checkbox" checked />
+              <div class="muted">※ゲーム数天井狙い時のみ有効</div>
+            </div>
+          </div>
+        
+          <div class="row3" style="margin-top:8px;">
+            <div>
+              <label>天井前兆タイプ</label>
+              <select id="ceilPreType">
+                <option value="pre">前前兆（即発動型）</option>
+                <option value="post">後前兆（天井到達後に前兆）</option>
+              </select>
+              <div class="muted">※天井到達後に前兆が来る機種は「後前兆」</div>
+            </div>
+            <div>
+              <label>天井後前兆G数</label>
+              <input id="ceilPreG" type="number" step="1" min="0" value="0" />
+              <div class="muted">※後前兆の場合のみ加算（目安）</div>
+            </div>
+            <div class="muted" style="display:flex;align-items:end;padding-bottom:6px;">
+              （通常前兆設定とは独立）
+            </div>
+          </div>
+</div>
+      </div>
+<div>
         <label>累計スルー回数</label>
         <input id="throughCount" type="number" step="1" min="0" value="0" />
         <div class="muted">※CZ当選→失敗の回数（0=補正なし）</div>
@@ -483,7 +554,7 @@
 <script>
 
 (() => {
-  const DEFAULT_DATA = {"meta": {"updatedAt": "2026-02-08", "note": "内蔵テンプレは検算・入力省力化向け（等価前提）。数値は公開解析表を元にしていますが、機種/状態/設定/前提で変わるので適宜上書きしてください。"}, "modeDist": {"VVV2：設定変更時・革命ボーナス後・AT後（設定1）": {"通常A": 0.69, "通常B": 0.25, "通常C": 0.05, "天国": 0.01}, "東リベ：モード選択率（設定1）": {"モードA": 0.554, "モードB": 0.124, "チャンス": 0.169, "天国": 0.121, "特殊": 0.032}}, "modeTrans": {"VVV2：CZ失敗後・決戦ボーナス後": {"fromModes": ["通常A", "通常B", "通常C", "天国"], "toModes": ["通常A", "通常B", "通常C", "天国"], "mat": [[0.66, 0.29, 0.04, 0.01], [0.0, 0.66, 0.32, 0.02], [0.0, 0.0, 0.57, 0.43], [0.66, 0.31, 0.02, 0.01]]}}, "ptDist": {"VVV2：1周期目 規定pt分布": {"通常A": [{"range": "100pt", "min": 100, "max": 100, "p": 0.05}, {"range": "200pt", "min": 200, "max": 200, "p": 0.95}], "通常B": [{"range": "100pt", "min": 100, "max": 100, "p": 0.05}, {"range": "200pt", "min": 200, "max": 200, "p": 0.95}], "通常C": [{"range": "100pt", "min": 100, "max": 100, "p": 0.1}, {"range": "200pt", "min": 200, "max": 200, "p": 0.9}], "天国": [{"range": "100pt", "min": 100, "max": 100, "p": 0.05}, {"range": "200pt", "min": 200, "max": 200, "p": 0.95}]}, "VVV2：2〜6周期 規定pt分布（前回600pt以外）": {"通常A": [{"range": "100pt", "min": 100, "max": 100, "p": 0.25}, {"range": "200pt", "min": 200, "max": 200, "p": 0.23}, {"range": "300pt", "min": 300, "max": 300, "p": 0.05}, {"range": "400pt", "min": 400, "max": 400, "p": 0.28}, {"range": "500pt", "min": 500, "max": 500, "p": 0.04}, {"range": "600pt", "min": 600, "max": 600, "p": 0.15}], "通常B": [{"range": "100pt", "min": 100, "max": 100, "p": 0.29}, {"range": "200pt", "min": 200, "max": 200, "p": 0.13}, {"range": "300pt", "min": 300, "max": 300, "p": 0.16}, {"range": "400pt", "min": 400, "max": 400, "p": 0.12}, {"range": "500pt", "min": 500, "max": 500, "p": 0.14}, {"range": "600pt", "min": 600, "max": 600, "p": 0.16}], "通常C": [{"range": "100pt", "min": 100, "max": 100, "p": 0.35}, {"range": "200pt", "min": 200, "max": 200, "p": 0.44}, {"range": "300pt", "min": 300, "max": 300, "p": 0.03}, {"range": "400pt", "min": 400, "max": 400, "p": 0.18}]}, "VVV2：2〜6周期 規定pt分布（前回600pt or 特殊テーブル）": {"通常A": [{"range": "100pt", "min": 100, "max": 100, "p": 0.16}, {"range": "200pt", "min": 200, "max": 200, "p": 0.31}, {"range": "300pt", "min": 300, "max": 300, "p": 0.06}, {"range": "400pt", "min": 400, "max": 400, "p": 0.47}], "通常B": [{"range": "100pt", "min": 100, "max": 100, "p": 0.2}, {"range": "200pt", "min": 200, "max": 200, "p": 0.32}, {"range": "300pt", "min": 300, "max": 300, "p": 0.31}, {"range": "400pt", "min": 400, "max": 400, "p": 0.17}], "通常C": [{"range": "100pt", "min": 100, "max": 100, "p": 0.38}, {"range": "200pt", "min": 200, "max": 200, "p": 0.39}, {"range": "300pt", "min": 300, "max": 300, "p": 0.03}, {"range": "400pt", "min": 400, "max": 400, "p": 0.2}]}, "東リベ：1周期目 規定pt分布（通常時・全モード共通）": {"共通": [{"range": "100pt", "min": 100, "max": 100, "p": 0.125}, {"range": "200pt", "min": 200, "max": 200, "p": 0.875}]}, "東リベ：2周期目以降 規定pt分布（通常時）": {"モードA": [{"range": "100pt", "min": 100, "max": 100, "p": 0.098}, {"range": "200pt", "min": 200, "max": 200, "p": 0.031}, {"range": "300pt", "min": 300, "max": 300, "p": 0.43}, {"range": "400pt", "min": 400, "max": 400, "p": 0.031}, {"range": "500pt", "min": 500, "max": 500, "p": 0.41}], "モードB": [{"range": "100pt", "min": 100, "max": 100, "p": 0.06293706293706294}, {"range": "200pt", "min": 200, "max": 200, "p": 0.2497502497502498}, {"range": "300pt", "min": 300, "max": 300, "p": 0.6873126873126874}], "チャンス": [{"range": "100pt", "min": 100, "max": 100, "p": 0.098}, {"range": "200pt", "min": 200, "max": 200, "p": 0.031}, {"range": "300pt", "min": 300, "max": 300, "p": 0.344}, {"range": "400pt", "min": 400, "max": 400, "p": 0.031}, {"range": "500pt", "min": 500, "max": 500, "p": 0.496}], "特殊": [{"range": "100pt", "min": 100, "max": 100, "p": 0.15615615615615616}, {"range": "200pt", "min": 200, "max": 200, "p": 0.15615615615615616}, {"range": "300pt", "min": 300, "max": 300, "p": 0.15615615615615616}, {"range": "400pt", "min": 400, "max": 400, "p": 0.15615615615615616}, {"range": "500pt", "min": 500, "max": 500, "p": 0.37537537537537535}], "天国": [{"range": "100pt", "min": 100, "max": 100, "p": 0.125}, {"range": "200pt", "min": 200, "max": 200, "p": 0.875}]}}, "hitRate": {"VVV2：天井周期の振り分け（設定1）": {"通常A": [{"key": "1周期目", "p": 0.14285714285714288}, {"key": "2周期目", "p": 0.29591836734693877}, {"key": "3周期目", "p": 0.04081632653061225}, {"key": "4周期目", "p": 0.15306122448979592}, {"key": "5周期目", "p": 0.1326530612244898}, {"key": "6周期目", "p": 0.23469387755102042}], "通常B": [{"key": "1周期目", "p": 0.05}, {"key": "2周期目", "p": 0.13}, {"key": "3周期目", "p": 0.82}], "通常C": [{"key": "1周期目", "p": 0.11}, {"key": "2周期目", "p": 0.18}, {"key": "3周期目", "p": 0.14}, {"key": "4周期目", "p": 0.12}, {"key": "5周期目", "p": 0.45}], "天国": [{"key": "1周期目", "p": 1.0}]}, "東リベ：当選周期分布（設定1・推定/当選率→分布化）": {"モードA": [{"key": "1周期目", "p": 0.344}, {"key": "2周期目", "p": 0.115456}, {"key": "3周期目", "p": 0.158379392}, {"key": "4周期目", "p": 0.095541152}, {"key": "5周期目", "p": 0.095158987392}, {"key": "6周期目", "p": 0.191464468608}], "モードB": [{"key": "1周期目", "p": 0.09800000000000002}, {"key": "2周期目", "p": 0.18310600000000002}, {"key": "3周期目", "p": 0.37598156200000005}, {"key": "4周期目", "p": 0.08572810950000001}, {"key": "5周期目", "p": 0.08538519706200001}, {"key": "6周期目", "p": 0.17179913143800002}], "チャンス": [{"key": "1周期目", "p": 0.074}, {"key": "2周期目", "p": 0.318544}, {"key": "3周期目", "p": 0.607456}], "天国": [{"key": "1周期目", "p": 1.0}], "特殊": [{"key": "1周期目", "p": 0.25}, {"key": "2周期目", "p": 0.132}, {"key": "3周期目", "p": 0.212592}, {"key": "4周期目", "p": 0.101352}, {"key": "5周期目", "p": 0.053513856}, {"key": "6周期目", "p": 0.250542144}]}}};
+  const DEFAULT_DATA = {"meta": {"updatedAt": "2026-02-08", "note": "内蔵テンプレは検算・入力省力化向け（等価前提）。数値は公開解析表を元にしていますが、機種/状態/設定/前提で変わるので適宜上書きしてください。"}, "modeDist": {"VVV2：設定変更時・革命ボーナス後・AT後（設定1）": {"通常A": 0.69, "通常B": 0.25, "通常C": 0.05, "天国": 0.01}, "東リベ：モード選択率（設定1）": {"モードA": 0.554, "モードB": 0.124, "チャンス": 0.169, "天国": 0.121, "特殊": 0.032}, "北斗転生2：AT終了後 モード移行率（設定1）": {"モードA": 0.519, "モードB": 0.237, "モードC": 0.176, "天国": 0.068}, "北斗転生2：設定変更後 モード移行率（設定1）": {"モードA": 0.493, "モードB": 0.22, "モードC": 0.201, "天国": 0.086}}, "modeTrans": {"VVV2：CZ失敗後・決戦ボーナス後": {"fromModes": ["通常A", "通常B", "通常C", "天国"], "toModes": ["通常A", "通常B", "通常C", "天国"], "mat": [[0.66, 0.29, 0.04, 0.01], [0.0, 0.66, 0.32, 0.02], [0.0, 0.0, 0.57, 0.43], [0.66, 0.31, 0.02, 0.01]]}}, "ptDist": {"VVV2：1周期目 規定pt分布": {"通常A": [{"range": "100pt", "min": 100, "max": 100, "p": 0.05}, {"range": "200pt", "min": 200, "max": 200, "p": 0.95}], "通常B": [{"range": "100pt", "min": 100, "max": 100, "p": 0.05}, {"range": "200pt", "min": 200, "max": 200, "p": 0.95}], "通常C": [{"range": "100pt", "min": 100, "max": 100, "p": 0.1}, {"range": "200pt", "min": 200, "max": 200, "p": 0.9}], "天国": [{"range": "100pt", "min": 100, "max": 100, "p": 0.05}, {"range": "200pt", "min": 200, "max": 200, "p": 0.95}]}, "VVV2：2〜6周期 規定pt分布（前回600pt以外）": {"通常A": [{"range": "100pt", "min": 100, "max": 100, "p": 0.25}, {"range": "200pt", "min": 200, "max": 200, "p": 0.23}, {"range": "300pt", "min": 300, "max": 300, "p": 0.05}, {"range": "400pt", "min": 400, "max": 400, "p": 0.28}, {"range": "500pt", "min": 500, "max": 500, "p": 0.04}, {"range": "600pt", "min": 600, "max": 600, "p": 0.15}], "通常B": [{"range": "100pt", "min": 100, "max": 100, "p": 0.29}, {"range": "200pt", "min": 200, "max": 200, "p": 0.13}, {"range": "300pt", "min": 300, "max": 300, "p": 0.16}, {"range": "400pt", "min": 400, "max": 400, "p": 0.12}, {"range": "500pt", "min": 500, "max": 500, "p": 0.14}, {"range": "600pt", "min": 600, "max": 600, "p": 0.16}], "通常C": [{"range": "100pt", "min": 100, "max": 100, "p": 0.35}, {"range": "200pt", "min": 200, "max": 200, "p": 0.44}, {"range": "300pt", "min": 300, "max": 300, "p": 0.03}, {"range": "400pt", "min": 400, "max": 400, "p": 0.18}]}, "VVV2：2〜6周期 規定pt分布（前回600pt or 特殊テーブル）": {"通常A": [{"range": "100pt", "min": 100, "max": 100, "p": 0.16}, {"range": "200pt", "min": 200, "max": 200, "p": 0.31}, {"range": "300pt", "min": 300, "max": 300, "p": 0.06}, {"range": "400pt", "min": 400, "max": 400, "p": 0.47}], "通常B": [{"range": "100pt", "min": 100, "max": 100, "p": 0.2}, {"range": "200pt", "min": 200, "max": 200, "p": 0.32}, {"range": "300pt", "min": 300, "max": 300, "p": 0.31}, {"range": "400pt", "min": 400, "max": 400, "p": 0.17}], "通常C": [{"range": "100pt", "min": 100, "max": 100, "p": 0.38}, {"range": "200pt", "min": 200, "max": 200, "p": 0.39}, {"range": "300pt", "min": 300, "max": 300, "p": 0.03}, {"range": "400pt", "min": 400, "max": 400, "p": 0.2}]}, "東リベ：1周期目 規定pt分布（通常時・全モード共通）": {"共通": [{"range": "100pt", "min": 100, "max": 100, "p": 0.125}, {"range": "200pt", "min": 200, "max": 200, "p": 0.875}]}, "東リベ：2周期目以降 規定pt分布（通常時）": {"モードA": [{"range": "100pt", "min": 100, "max": 100, "p": 0.098}, {"range": "200pt", "min": 200, "max": 200, "p": 0.031}, {"range": "300pt", "min": 300, "max": 300, "p": 0.43}, {"range": "400pt", "min": 400, "max": 400, "p": 0.031}, {"range": "500pt", "min": 500, "max": 500, "p": 0.41}], "モードB": [{"range": "100pt", "min": 100, "max": 100, "p": 0.06293706293706294}, {"range": "200pt", "min": 200, "max": 200, "p": 0.2497502497502498}, {"range": "300pt", "min": 300, "max": 300, "p": 0.6873126873126874}], "チャンス": [{"range": "100pt", "min": 100, "max": 100, "p": 0.098}, {"range": "200pt", "min": 200, "max": 200, "p": 0.031}, {"range": "300pt", "min": 300, "max": 300, "p": 0.344}, {"range": "400pt", "min": 400, "max": 400, "p": 0.031}, {"range": "500pt", "min": 500, "max": 500, "p": 0.496}], "特殊": [{"range": "100pt", "min": 100, "max": 100, "p": 0.15615615615615616}, {"range": "200pt", "min": 200, "max": 200, "p": 0.15615615615615616}, {"range": "300pt", "min": 300, "max": 300, "p": 0.15615615615615616}, {"range": "400pt", "min": 400, "max": 400, "p": 0.15615615615615616}, {"range": "500pt", "min": 500, "max": 500, "p": 0.37537537537537535}], "天国": [{"range": "100pt", "min": 100, "max": 100, "p": 0.125}, {"range": "200pt", "min": 200, "max": 200, "p": 0.875}]}, "北斗転生2：規定あべし分布（設定変更後・設定1）": {"モードA": [{"range": "1-64", "min": 1, "max": 64, "p": 0.0026}, {"range": "65-128", "min": 65, "max": 128, "p": 0.018000000000000002}, {"range": "129-192", "min": 129, "max": 192, "p": 0.0036}, {"range": "193-256", "min": 193, "max": 256, "p": 0.2626}, {"range": "257-320", "min": 257, "max": 320, "p": 0.0015}, {"range": "321-384", "min": 321, "max": 384, "p": 0.0088}, {"range": "385-448", "min": 385, "max": 448, "p": 0.0015}, {"range": "449-512", "min": 449, "max": 512, "p": 0.0015}, {"range": "513-576", "min": 513, "max": 576, "p": 0.06709999999999999}, {"range": "577-640", "min": 577, "max": 640, "p": 0.001}, {"range": "641-704", "min": 641, "max": 704, "p": 0.001}, {"range": "705-768", "min": 705, "max": 768, "p": 0.011899999999999999}, {"range": "769-832", "min": 769, "max": 832, "p": 0.001}, {"range": "833-896", "min": 833, "max": 896, "p": 0.048499999999999995}, {"range": "897-960", "min": 897, "max": 960, "p": 0.0089}, {"range": "961-1024", "min": 961, "max": 1024, "p": 0.053399999999999996}, {"range": "1025-1088", "min": 1025, "max": 1088, "p": 0.0089}, {"range": "1089-1152", "min": 1089, "max": 1152, "p": 0.053399999999999996}, {"range": "1153-1216", "min": 1153, "max": 1216, "p": 0.0089}, {"range": "1217-1280", "min": 1217, "max": 1280, "p": 0.4362}], "モードB": [{"range": "1-64", "min": 1, "max": 64, "p": 0.0029}, {"range": "65-128", "min": 65, "max": 128, "p": 0.0202}, {"range": "129-192", "min": 129, "max": 192, "p": 0.0045000000000000005}, {"range": "193-256", "min": 193, "max": 256, "p": 0.3272}, {"range": "257-320", "min": 257, "max": 320, "p": 0.009000000000000001}, {"range": "321-384", "min": 321, "max": 384, "p": 0.0541}, {"range": "385-448", "min": 385, "max": 448, "p": 0.0003}, {"range": "449-512", "min": 449, "max": 512, "p": 0.0003}, {"range": "513-576", "min": 513, "max": 576, "p": 0.0121}, {"range": "577-640", "min": 577, "max": 640, "p": 0.0089}, {"range": "641-704", "min": 641, "max": 704, "p": 0.0089}, {"range": "705-768", "min": 705, "max": 768, "p": 0.10679999999999999}, {"range": "769-832", "min": 769, "max": 832, "p": 0.0089}, {"range": "833-896", "min": 833, "max": 896, "p": 0.436}], "モードC": [{"range": "1-64", "min": 1, "max": 64, "p": 0.0003}, {"range": "65-128", "min": 65, "max": 128, "p": 0.0022}, {"range": "129-192", "min": 129, "max": 192, "p": 0.004}, {"range": "193-256", "min": 193, "max": 256, "p": 0.2877}, {"range": "257-320", "min": 257, "max": 320, "p": 0.0045000000000000005}, {"range": "321-384", "min": 321, "max": 384, "p": 0.0269}, {"range": "385-448", "min": 385, "max": 448, "p": 0.013999999999999999}, {"range": "449-512", "min": 449, "max": 512, "p": 0.013999999999999999}, {"range": "513-576", "min": 513, "max": 576, "p": 0.6463}], "天国": [{"range": "1-64", "min": 1, "max": 64, "p": 0.125}, {"range": "65-128", "min": 65, "max": 128, "p": 0.875}]}, "北斗転生2：規定あべし分布（AT終了後・設定1）": {"モードA": [{"range": "1-64", "min": 1, "max": 64, "p": 0.002}, {"range": "65-128", "min": 65, "max": 128, "p": 0.0137}, {"range": "129-192", "min": 129, "max": 192, "p": 0.0031}, {"range": "193-256", "min": 193, "max": 256, "p": 0.2194}, {"range": "257-320", "min": 257, "max": 320, "p": 0.0012}, {"range": "321-384", "min": 321, "max": 384, "p": 0.0073}, {"range": "385-448", "min": 385, "max": 448, "p": 0.0012}, {"range": "449-512", "min": 449, "max": 512, "p": 0.0012}, {"range": "513-576", "min": 513, "max": 576, "p": 0.055999999999999994}, {"range": "577-640", "min": 577, "max": 640, "p": 0.0011}, {"range": "641-704", "min": 641, "max": 704, "p": 0.0012}, {"range": "705-768", "min": 705, "max": 768, "p": 0.013999999999999999}, {"range": "769-832", "min": 769, "max": 832, "p": 0.0011}, {"range": "833-896", "min": 833, "max": 896, "p": 0.0571}, {"range": "897-960", "min": 897, "max": 960, "p": 0.0011}, {"range": "961-1024", "min": 961, "max": 1024, "p": 0.0070999999999999995}, {"range": "1025-1088", "min": 1025, "max": 1088, "p": 0.0012}, {"range": "1089-1152", "min": 1089, "max": 1152, "p": 0.0073}, {"range": "1153-1216", "min": 1153, "max": 1216, "p": 0.0012}, {"range": "1217-1280", "min": 1217, "max": 1280, "p": 0.1099}, {"range": "1281-1344", "min": 1281, "max": 1344, "p": 0.034}, {"range": "1345-1408", "min": 1345, "max": 1408, "p": 0.15109999999999998}, {"range": "1409-1472", "min": 1409, "max": 1472, "p": 0.293}, {"range": "1473-1536", "min": 1473, "max": 1536, "p": 0.014499999999999999}], "モードB": [{"range": "1-64", "min": 1, "max": 64, "p": 0.0021}, {"range": "65-128", "min": 65, "max": 128, "p": 0.0149}, {"range": "129-192", "min": 129, "max": 192, "p": 0.0037}, {"range": "193-256", "min": 193, "max": 256, "p": 0.2659}, {"range": "257-320", "min": 257, "max": 320, "p": 0.0073}, {"range": "321-384", "min": 321, "max": 384, "p": 0.0441}, {"range": "385-448", "min": 385, "max": 448, "p": 0.0002}, {"range": "449-512", "min": 449, "max": 512, "p": 0.0002}, {"range": "513-576", "min": 513, "max": 576, "p": 0.0098}, {"range": "577-640", "min": 577, "max": 640, "p": 0.009899999999999999}, {"range": "641-704", "min": 641, "max": 704, "p": 0.0101}, {"range": "705-768", "min": 705, "max": 768, "p": 0.1223}, {"range": "769-832", "min": 769, "max": 832, "p": 0.01}, {"range": "833-896", "min": 833, "max": 896, "p": 0.4993}], "モードC": [{"range": "1-64", "min": 1, "max": 64, "p": 0.0003}, {"range": "65-128", "min": 65, "max": 128, "p": 0.002}, {"range": "129-192", "min": 129, "max": 192, "p": 0.004}, {"range": "193-256", "min": 193, "max": 256, "p": 0.28809999999999997}, {"range": "257-320", "min": 257, "max": 320, "p": 0.0045000000000000005}, {"range": "321-384", "min": 321, "max": 384, "p": 0.027000000000000003}, {"range": "385-448", "min": 385, "max": 448, "p": 0.0141}, {"range": "449-512", "min": 449, "max": 512, "p": 0.0138}, {"range": "513-576", "min": 513, "max": 576, "p": 0.6464}], "天国": [{"range": "1-64", "min": 1, "max": 64, "p": 0.125}, {"range": "65-128", "min": 65, "max": 128, "p": 0.875}]}}, "hitRate": {"VVV2：天井周期の振り分け（設定1）": {"通常A": [{"key": "1周期目", "p": 0.14285714285714288}, {"key": "2周期目", "p": 0.29591836734693877}, {"key": "3周期目", "p": 0.04081632653061225}, {"key": "4周期目", "p": 0.15306122448979592}, {"key": "5周期目", "p": 0.1326530612244898}, {"key": "6周期目", "p": 0.23469387755102042}], "通常B": [{"key": "1周期目", "p": 0.05}, {"key": "2周期目", "p": 0.13}, {"key": "3周期目", "p": 0.82}], "通常C": [{"key": "1周期目", "p": 0.11}, {"key": "2周期目", "p": 0.18}, {"key": "3周期目", "p": 0.14}, {"key": "4周期目", "p": 0.12}, {"key": "5周期目", "p": 0.45}], "天国": [{"key": "1周期目", "p": 1.0}]}, "東リベ：当選周期分布（設定1・推定/当選率→分布化）": {"モードA": [{"key": "1周期目", "p": 0.344}, {"key": "2周期目", "p": 0.115456}, {"key": "3周期目", "p": 0.158379392}, {"key": "4周期目", "p": 0.095541152}, {"key": "5周期目", "p": 0.095158987392}, {"key": "6周期目", "p": 0.191464468608}], "モードB": [{"key": "1周期目", "p": 0.09800000000000002}, {"key": "2周期目", "p": 0.18310600000000002}, {"key": "3周期目", "p": 0.37598156200000005}, {"key": "4周期目", "p": 0.08572810950000001}, {"key": "5周期目", "p": 0.08538519706200001}, {"key": "6周期目", "p": 0.17179913143800002}], "チャンス": [{"key": "1周期目", "p": 0.074}, {"key": "2周期目", "p": 0.318544}, {"key": "3周期目", "p": 0.607456}], "天国": [{"key": "1周期目", "p": 1.0}], "特殊": [{"key": "1周期目", "p": 0.25}, {"key": "2周期目", "p": 0.132}, {"key": "3周期目", "p": 0.212592}, {"key": "4周期目", "p": 0.101352}, {"key": "5周期目", "p": 0.053513856}, {"key": "6周期目", "p": 0.250542144}]}, "北斗転生2：当選周期分布（固定：1周期目=100%）": {"モードA": [{"key": "1周期目", "p": 1.0}], "モードB": [{"key": "1周期目", "p": 1.0}], "モードC": [{"key": "1周期目", "p": 1.0}], "天国": [{"key": "1周期目", "p": 1.0}]}}};
   let dataModel = JSON.parse(JSON.stringify(DEFAULT_DATA));
 
   // --- Tables persistence (modeDist/ptDist/cycleDist/modeTrans) ---
@@ -495,7 +566,7 @@
   function mergeTablesIntoModel(tables){
     // 安全策：内蔵テーブル（DEFAULT_DATAに存在するキー）は上書きしない。
     // これにより「同名で保存したカスタム」が内蔵テンプレを壊す事故を防ぎます。
-    const types = ["modeDist","ptDist","cycleDist","modeTrans"];
+    const types = ["modeDist","ptDist","hitRate","cycleDist","modeTrans"];
     types.forEach(t=>{
       if(!tables[t]) return;
       dataModel[t] = dataModel[t] || {};
@@ -505,6 +576,16 @@
         dataModel[t][k] = tables[t][k];
       });
     });
+
+// backward compatibility: older saves used cycleDist -> now hitRate
+if(tables.cycleDist && !tables.hitRate){
+  dataModel.hitRate = dataModel.hitRate || {};
+  const builtinHR = (DEFAULT_DATA && DEFAULT_DATA.hitRate) ? DEFAULT_DATA.hitRate : {};
+  Object.keys(tables.cycleDist).forEach(k=>{
+    if(Object.prototype.hasOwnProperty.call(builtinHR, k)) return;
+    if(!dataModel.hitRate[k]) dataModel.hitRate[k] = tables.cycleDist[k];
+  });
+}
   }
   mergeTablesIntoModel(loadAllTables());
 
@@ -656,7 +737,9 @@ function refreshPresetSelect(){
   
   // --- Context (table) save/load UI ---
   function getCtxKeysForType(type){
-    const obj = (dataModel[type]||{});
+    let obj = (dataModel[type]||{});
+    // cycleDist は内部的に hitRate を参照（旧:cycleDist 互換）
+    if(type==="cycleDist") obj = Object.assign({}, (dataModel.hitRate||{}), (dataModel.cycleDist||{}));
     return Object.keys(obj).sort((a,b)=>a.localeCompare(b,'ja'));
   }
   function refreshContextSelect(){
@@ -681,22 +764,49 @@ function refreshPresetSelect(){
     if(cn && keys.includes(cn)) sel.value = cn;
   }
 
-  function gridFromContext(type, ctxName){
+  
+function fmtPct(p){
+  if(p==null || isNaN(p)) return "";
+  const x = (p*100);
+  // keep up to 2 decimals; trim trailing zeros
+  const s = x.toFixed(2).replace(/\.00$/,"").replace(/(\.\d)0$/,"$1");
+  return s + "%";
+}
+
+function gridFromContext(type, ctxName){
     if(type==="modeDist"){
       const dist = (dataModel.modeDist||{})[ctxName] || {};
-      return [["モード","割合"], ...Object.keys(dist).map(k=>[k, Math.round(dist[k]*100)+"%"])];
+      return [["モード","割合"], ...Object.keys(dist).map(k=>[k, fmtPct(dist[k])])];
     }
     if(type==="cycleDist"){
-      // minimal model: mode x cycle hit-rate table (stores matrix-like object in dataModel.cycleDist[ctxName])
-      const cd = (dataModel.cycleDist||{})[ctxName];
-      if(!cd) return [[""]];
-      if(cd.modes && cd.cycles && cd.matrix){
-        const header=["", ...cd.cycles];
-        const rows = cd.modes.map(m=>[m, ...(cd.cycles.map(c=>Math.round((cd.matrix[m]?.[c]||0)*100)+"%"))]);
-        return [header, ...rows];
-      }
-      return [[""]];
-    }
+  // 内部モデルは hitRate[ctxName][mode]=[{key:"1周期目", p:0.12}, ...]
+  // 旧(cycleDist)互換も読む
+  const hr = (dataModel.hitRate||{})[ctxName] || (dataModel.cycleDist||{})[ctxName];
+  if(!hr) return [[""]];
+  // hitRate 形式
+  if(typeof hr === "object" && !Array.isArray(hr) && !hr.modes){
+    const modes = Object.keys(hr);
+    const cycleSet = new Set();
+    modes.forEach(m=>{
+      (hr[m]||[]).forEach(it=>{ if(it && it.key) cycleSet.add(it.key); });
+    });
+    const cycles = Array.from(cycleSet).sort((a,b)=>parseCycleNum(a)-parseCycleNum(b));
+    const header=["", ...cycles];
+    const rows = modes.map(m=>{
+      const map={};
+      (hr[m]||[]).forEach(it=>{ if(it && it.key!=null) map[it.key]=it.p; });
+      return [m, ...cycles.map(c=>fmtPct(map[c]||0))];
+    });
+    return [header, ...rows];
+  }
+  // matrix 形式
+  if(hr.modes && hr.cycles && hr.matrix){
+    const header=["", ...hr.cycles];
+    const rows = hr.modes.map(m=>[m, ...(hr.cycles.map(c=>fmtPct((hr.matrix[m]?.[c]||0))))]);
+    return [header, ...rows];
+  }
+  return [[""]];
+}
     if(type==="ptDist"){
       // ptDist[ctxName][mode]=[{range,min,max,p}]
       const pd = (dataModel.ptDist||{})[ctxName];
@@ -706,7 +816,7 @@ function refreshPresetSelect(){
       const out=[["モード","規定pt（例:64-128）","割合"]];
       modes.forEach(m=>{
         (pd[m]||[]).forEach(row=>{
-          out.push([m, row.range||(`${row.min}-${row.max}`), Math.round((row.p||0)*100)+"%"]);
+          out.push([m, row.range||(`${row.min}-${row.max}`), fmtPct(row.p||0)]);
         });
       });
       return out;
@@ -725,7 +835,7 @@ function refreshPresetSelect(){
             const j=(mt.toModes||[]).indexOf(t);
             if(i>=0 && j>=0 && mt.mat[i] && mt.mat[i][j]!=null) v = mt.mat[i][j];
           }
-          line.push(Math.round((v||0)*100)+"%");
+          line.push(fmtPct(v||0));
         });
         return line;
       });
@@ -751,6 +861,7 @@ function refreshPresetSelect(){
     const payload = {
       modeDist: dataModel.modeDist||{},
       ptDist: dataModel.ptDist||{},
+      hitRate: dataModel.hitRate||{},
       cycleDist: dataModel.cycleDist||{},
       modeTrans: dataModel.modeTrans||{},
     };
@@ -780,6 +891,14 @@ function refreshPresetSelect(){
     const key = (sel?.value || "").trim();
     if(!key) return setMsg("applyMsg","削除したい保存済みを選んでね。");
     if(!confirm(`「${key}」を削除しますか？`)) return;
+    if(type==="cycleDist"){
+      const had = (dataModel.cycleDist && dataModel.cycleDist[key]) || (dataModel.hitRate && dataModel.hitRate[key]);
+      if(!had) return setMsg("applyMsg","見つかりませんでした。");
+      if(dataModel.cycleDist) delete dataModel.cycleDist[key];
+      if(dataModel.hitRate) delete dataModel.hitRate[key];
+      persistTables(); updateJsonView(); refreshCalcSelectors(); refreshContextSelect();
+      return setMsg("applyMsg", `削除：${key}`);
+    }
     if(dataModel[type] && dataModel[type][key]){
       delete dataModel[type][key];
       persistTables();
@@ -893,7 +1012,7 @@ function renderTable(){
       if(!ctxName || !DEFAULT_DATA.modeDist[ctxName]) ctxName = all[0] || "default";
       document.getElementById("contextName").value = ctxName;
       const dist = DEFAULT_DATA.modeDist[ctxName] || {};
-      grid = [["モード","割合"], ...Object.keys(dist).map(k=>[k, Math.round(dist[k]*100)+"%"])];
+      grid = [["モード","割合"], ...Object.keys(dist).map(k=>[k, fmtPct(dist[k])])];
     } else if(type==="modeTrans"){
       let ctxName = document.getElementById("contextName").value.trim();
       const all = getKeys(DEFAULT_DATA.modeTrans||{});
@@ -913,7 +1032,7 @@ function renderTable(){
               const j = (mt.toModes||[]).indexOf(to);
               if(i>=0 && j>=0 && mt.mat[i] && mt.mat[i][j]!=null) v = mt.mat[i][j];
             }
-            row.push(Math.round((v||0)*100)+"%");
+            row.push(fmtPct(v||0));
           }
           grid.push(row);
         }
@@ -1035,8 +1154,10 @@ function renderTable(){
         }
       }
       dataModel.hitRate = dataModel.hitRate || {};
+      dataModel.cycleDist = dataModel.cycleDist || {};
       dataModel.hitRate[ctxName]=out;
-      updateJsonView(); refreshCalcSelectors({cycleDist:ctxName});
+      dataModel.cycleDist[ctxName]=out; // 互換：cycleDist側にも同内容を保存
+      updateJsonView(); refreshCalcSelectors({cycleDist:ctxName}); persistTables(); refreshContextSelect();
       return `周期当選分布として反映：${ctxName}`;
     }
 
@@ -1164,7 +1285,25 @@ function renderTable(){
       "directDenom": 0
     }
   }
-};
+
+,
+  "スマスロ北斗の拳 転生の章2（設定1）": {
+    "selects": {
+      "modeDist": "北斗転生2：AT終了後 モード移行率（設定1）",
+      "cycleDist": "北斗転生2：当選周期分布（固定：1周期目=100%）",
+      "pt1": "北斗転生2：規定あべし分布（AT終了後・設定1）",
+      "pt2p": "北斗転生2：規定あべし分布（AT終了後・設定1）",
+      "ptShort": "北斗転生2：規定あべし分布（設定変更後・設定1）",
+      "cycleShort": ""
+    },
+    "inputs": {
+      "ptPerG": 1.0,
+      "spinPer1k": 33.0,
+      "ty": 500,
+      "junzo": 2.5,
+      "directDenom": 0
+    }
+  }};
 
   function initMachineTplSelect(){
     const sel = document.getElementById("selMachineTpl");
@@ -1371,15 +1510,58 @@ function renderTable(){
   function applyModeAtLeastPct(dist, modeOrder, baseMode, targetPct01){
     dist = normalizeDist(dist||{});
     if(!baseMode) return dist;
+
+    // baseModeがテンプレ間で「通常B」「モードB」など表記揺れしても動くように補正
+    const resolveBase = (bm)=>{
+      if(!bm) return bm;
+      if(Object.prototype.hasOwnProperty.call(dist, bm)) return bm;
+      // 末尾の「以上」などが混ざっていたら除去
+      const b0 = (""+bm).replace(/以上$/,"");
+      if(Object.prototype.hasOwnProperty.call(dist, b0)) return b0;
+
+      const alts = new Set();
+      alts.add(b0);
+      // 通常<->モード を入れ替え
+      alts.add(b0.replace(/^通常/,"モード"));
+      alts.add(b0.replace(/^モード/,"通常"));
+      // 英数モード表記（A/B/C等）だけ抽出して再構成
+      const m = b0.match(/([ABC])$/);
+      if(m){
+        alts.add("モード"+m[1]);
+        alts.add("通常"+m[1]);
+      }
+      // 天国はそのまま
+      alts.add("天国");
+      for(const cand of alts){
+        if(Object.prototype.hasOwnProperty.call(dist, cand)) return cand;
+      }
+      return b0;
+    };
+
+    baseMode = resolveBase(baseMode);
+
     const order = (modeOrder && modeOrder.length) ? modeOrder.slice() : Object.keys(dist);
-    const idx = order.indexOf(baseMode);
+    let idx = order.indexOf(baseMode);
+
+    // order側にも表記揺れがある場合に備えて、distキー一致優先で探す
+    if(idx < 0){
+      for(let i=0;i<order.length;i++){
+        if(resolveBase(order[i]) === baseMode){ idx=i; break; }
+      }
+    }
     if(idx<0) return dist;
 
     const hi = new Set(order.slice(idx)); // base以上
     let sumHi=0, sumLo=0;
     for(const k of Object.keys(dist)){
       const p=+dist[k]||0;
-      if(hi.has(k)) sumHi+=p; else sumLo+=p;
+      // hi判定も補正後で比較
+      const kk = resolveBase(k);
+      let isHi = false;
+      for(const h of hi){
+        if(resolveBase(h) === kk){ isHi=true; break; }
+      }
+      if(isHi) sumHi+=p; else sumLo+=p;
     }
     const T = Math.max(0, Math.min(1, +targetPct01||0));
     if(sumHi<=0 && T>0){ return dist; }
@@ -1391,7 +1573,12 @@ function renderTable(){
     const out={};
     for(const k of Object.keys(dist)){
       const p=+dist[k]||0;
-      out[k] = hi.has(k) ? p*scaleHi : p*scaleLo;
+      const kk = resolveBase(k);
+      let isHi = false;
+      for(const h of hi){
+        if(resolveBase(h) === kk){ isHi=true; break; }
+      }
+      out[k] = isHi ? p*scaleHi : p*scaleLo;
     }
     return normalizeDist(out);
   }
@@ -1442,6 +1629,22 @@ function renderTable(){
     const map={};
     // list can be: array of {key,p}, object {"1周期目":p,...}, or null
     if(!list) return map;
+
+    const postProcess = ()=>{
+      // 「当選周期分布」は基本的に1になる想定（天井で必ず当たる）
+      // テンプレ側で最終行（天井/最終周期）が「数値なしラベル」等で取り込めていないと、
+      // 合計が1未満になり「当選確率<100%」になってしまうので、残差を最終周期へ寄せて補正する。
+      let sum=0, mx=0;
+      for(const k of Object.keys(map)){
+        const n=+k; if(!isFinite(n)) continue;
+        if(n>mx) mx=n;
+        sum += (+map[k]||0);
+      }
+      if(mx>0 && sum>0 && sum < 0.999999){
+        map[mx] = (+map[mx]||0) + (1.0 - sum);
+      }
+    };
+
     if(Array.isArray(list)){
       for(const it of list){
         if(!it) continue;
@@ -1449,6 +1652,7 @@ function renderTable(){
         if(!n) continue;
         map[n]=(map[n]||0) + (+it.p||0);
       }
+      postProcess();
       return map;
     }
     if(typeof list==="object"){
@@ -1457,12 +1661,32 @@ function renderTable(){
         if(!n) continue;
         map[n]=(map[n]||0) + (+list[k]||0);
       }
+      postProcess();
       return map;
     }
     // number/string etc -> ignore
+    postProcess();
     return map;
   }
-  function avgPt(profileObj, mode, pick){
+  
+  // cycleP (当選周期分布) の合計が1未満のとき、残差を天井周期へ寄せて補正する
+  // ※テンプレ取り込み漏れ/％文字などで欠けた場合の保険。maxCycleを優先して最終周期に足す。
+  function ensureCyclePSumsToOne(cycleP, maxCycle){
+    if(!cycleP) return cycleP;
+    let sum=0;
+    for(const k of Object.keys(cycleP)){
+      const n=+k; if(!isFinite(n)) continue;
+      sum += (+cycleP[k]||0);
+    }
+    if(!(sum>0) || sum>=0.999999) return cycleP;
+    const last = (maxCycle && isFinite(maxCycle) && maxCycle>0) ? maxCycle : Math.max(0, ...Object.keys(cycleP).map(k=>+k).filter(n=>isFinite(n)));
+    if(last>0){
+      cycleP[last] = (+cycleP[last]||0) + (1.0 - sum);
+    }
+    return cycleP;
+  }
+
+function avgPt(profileObj, mode, pick){
     if(!profileObj) return {avg:0, max:0, ok:false};
     let arr = profileObj[mode] || profileObj["共通"] || null;
     if(!arr){
@@ -1531,12 +1755,41 @@ function renderTable(){
     const shortAvg = (enablePtShort && enableShort) ? avgPt(ptShortProfile, mode, prePtPick) : {avg:0, ok:false};
 
     const memo = {};
-    function dp(cycle, shortFlag){
+    
+    // 開始pt以降のみを有効にする（同一周期内の「通過分」除外）
+    function adjustArrForCut(arr, cutPt){
+      const out=[];
+      for(const it of arr){
+        const p=+it.p||0; if(p<=0) continue;
+        const mn=+it.min; const mx=+it.max;
+        if(!(isFinite(mn)&&isFinite(mx))) continue;
+        if(mx < cutPt) continue;
+        const mn2 = Math.max(mn, cutPt);
+        const width = (mx - mn + 1);
+        const width2 = (mx - mn2 + 1);
+        const p2 = p * (width2/width); // 区間内一様を仮定して残り分だけ確率を残す
+        out.push({min: mn2, max: mx, p: p2});
+      }
+      return out;
+    }
+
+function dp(cycle, shortFlag, cutPt){
       if(cycle > maxCycle) return {pHit:0, ePt:0, eCycleSum:0};
-      const key = cycle + "|" + (shortFlag?1:0);
+      const key = cycle + "|" + (shortFlag?1:0) + "|" + (cutPt==null?"-":String(cutPt));
       if(memo[key]!=null) return memo[key];
 
-      const arr = getArrForCycle(cycle, shortFlag);
+      const arr0 = getArrForCycle(cycle, shortFlag);
+      // 開始周期のみ、開始pt未満の「到達pt」を除外（条件付き分布）
+      let arr = arr0;
+      const cut = (cutPt!=null && cycle===startCycle) ? (+cutPt||0) : null;
+      if(arr0 && cut!=null){
+        arr = adjustArrForCut(arr0, cut);
+        // 全レンジが開始pt未満なら、この周期はもう当たらないので次周期へ
+        if(arr.length===0){
+          const next = dp(cycle+1, false, null);
+          memo[key]=next; return next;
+        }
+      }
       // その周期のpt分布がない場合でも、当選周期分布だけで進める（pt=0扱い）
       let sumP=0;
       if(arr){
@@ -1555,7 +1808,7 @@ function renderTable(){
           const pt = pickRangePt(it, prePtPick);
           const trig = (!shortFlag && enableShort && (pt >= (shortThPt||0)));
           const ptEff = (trig && shortAvg.ok) ? shortAvg.avg : pt;
-          expThis += ptEff * w;
+          expThis += (cut!=null ? Math.max(0, ptEff - cut) : ptEff) * w;
         }
       }
 
@@ -1569,13 +1822,13 @@ function renderTable(){
             const pt = pickRangePt(it, prePtPick);
             const trig = (!shortFlag && enableShort && (pt >= (shortThPt||0)));
             const ptEff = (trig && shortAvg.ok) ? shortAvg.avg : pt;
-            const next = dp(cycle+1, trig ? true : false);
+            const next = dp(cycle+1, trig ? true : false, null);
             miss.pHit += w * next.pHit;
-            miss.ePt  += w * (ptEff + next.ePt);
+            miss.ePt  += w * ((cut!=null ? Math.max(0, ptEff - cut) : ptEff) + next.ePt);
             miss.eCycleSum += w * next.eCycleSum;
           }
         } else {
-          const next = dp(cycle+1, false);
+          const next = dp(cycle+1, false, null);
           miss = next;
         }
       }
@@ -1589,10 +1842,10 @@ function renderTable(){
       return res;
     }
 
-    const r0 = dp(startCycle, false);
+    const r0 = dp(startCycle, false, (startPt||0));
 
-    // 打ち出しptを差し引き（同一周期内の想定）
-    let expPt = Math.max(0, (r0.ePt||0) - (startPt||0));
+    // dp()側で開始pt未満を除外しているので、ここでの差し引きは不要
+    let expPt = (r0.ePt||0);
     const hitProb = r0.pHit || 0;
 
     if(ptPerG<=0 || coinPerG<=0){
@@ -1718,6 +1971,39 @@ function renderTable(){
 
     let init = normalizeDist(modeDist);
 
+    // --- startPtで初期モード分布を条件付きにする（同一周期内で深いptまで到達している情報を反映） ---
+    // 例：開始pt=1000なのに、そのモードの規定ptが最大896までしか無い → そのモードは不可能なので除外し、残りで正規化
+    function remainProbForCut(arr, cutPt){
+      if(!arr || cutPt==null) return 1;
+      let s=0;
+      for(const it of arr){
+        const p=+it.p||0; if(p<=0) continue;
+        const mn=+it.min, mx=+it.max;
+        if(!(isFinite(mn)&&isFinite(mx))) continue;
+        if(mx < cutPt) continue;
+        const mn2 = Math.max(mn, cutPt);
+        const width = (mx - mn + 1);
+        const width2 = (mx - mn2 + 1);
+        if(width<=0 || width2<=0) continue;
+        s += p * (width2/width); // 区間内一様を仮定して残り確率を積む
+      }
+      return s;
+    }
+    if((startPt||0)>0){
+      const cut0 = (+startPt||0);
+      const prof = ((startCycle||1)===1) ? pt1 : pt2p; // dp() の選択と合わせる
+      const weighted = {};
+      for(const m of Object.keys(init)){
+        const base = init[m]||0;
+        const arrM = (prof && (prof[m] || prof['共通'])) ? (prof[m] || prof['共通']) : null;
+        const rp = remainProbForCut(arrM, cut0);
+        const w = base * rp;
+        if(w>0) weighted[m]=w;
+      }
+      init = normalizeDist(weighted);
+    }
+
+
     const modeTrans = (modeTransKey && dataModel.modeTrans) ? (dataModel.modeTrans[modeTransKey] || null) : null;
     if(modeTrans && throughCount>0){
       init = applyModeTrans(init, modeTrans, throughCount);
@@ -1731,28 +2017,202 @@ function renderTable(){
 
     const maxCycle = Math.max(inferMaxCycle(cycleDist) || 0, (cycleShortDist? (inferMaxCycle(cycleShortDist)||0):0)) || 6;
 
-    let totalEV=0, totalInvest=0, totalHitProb=0, totalAvgHitCycle=0, totalGames=0, totalGamesAll=0, totalPt=0;
-
-    for(const mode of Object.keys(init)){
-      const initP = init[mode] || 0;
-      if(initP<=0) continue;
-
-      const cycleP = buildCyclePMap(cycleDist[mode] || cycleDist['共通'] || []);
-      const cyclePShort = cycleShortDist ? buildCyclePMap((cycleShortDist[mode] || cycleShortDist['共通'] || [])) : null;
-      const r = calcForMode({startCycle, startPt, mode, cycleP, cyclePShort, maxCycle, pt1Profile:pt1, pt2pProfile:pt2p, ptPerG, coinPerG, ty, directDenom, preType, preG, prePtMin, prePtMax, prePtPick, prePtCustom, shortThPt, ptShortProfile: ptShort, junzo, betPerG});
-
-      totalEV += initP * r.ev;
-      totalInvest += initP * r.invest;
-      totalHitProb += initP * r.hitProb;
-      totalAvgHitCycle += initP * r.avgHitCycle;
-      totalGames += initP * r.expGames;
-      totalGamesAll += initP * (r.expGamesAll||r.expGames||0);
-      totalPt += initP * r.expPt;
+    // --- startCycleで初期モード分布を条件付きにする ---
+    // 例：周期選択分布(=「何周期目で当たるか」)を入力している場合、
+    // 開始周期が進んでいる = それ以前で当たっていない情報があるので、初期モード分布を更新する。
+    if((startCycle||1) > 1){
+      const sc = (startCycle||1);
+      const weighted2 = {};
+      for(const m of Object.keys(init)){
+        const base = init[m] || 0;
+        if(base<=0) continue;
+        const src = (cycleDist[m] || cycleDist['共通'] || []);
+        const cp = ensureCyclePSumsToOne(buildCyclePMap(src), maxCycle);
+        let sum = 0;
+        for(let c=1;c<=maxCycle;c++) sum += (cp[c]||0);
+        let survive = 1;
+        if(sum >= 0.95 && sum <= 1.05){
+          // 周期「選択」分布（各周期で当たる割合が合計≈1）
+          survive = 0;
+          for(let c=sc;c<=maxCycle;c++) survive += (cp[c]||0);
+        }else{
+          // 周期「ハザード」想定（各周期で独立に当たる確率）
+          survive = 1;
+          for(let c=1;c<sc;c++) survive *= (1 - (cp[c]||0));
+        }
+        const w = base * Math.max(0, survive);
+        if(w>0) weighted2[m]=w;
+      }
+      init = normalizeDist(weighted2);
     }
+
+
+    
+    // ===== [ADD] G数天井狙い（cycle/game切替 + weighted排他）ここから =====
+    // UI: tenjoMode = "cycle" or "game"
+    const tenjoMode = (document.querySelector('input[name="tenjoMode"]:checked')||{}).value || "cycle";
+
+    // ゲーム数天井狙い用入力（存在しない場合でも壊れない）
+    const useGameCeil = !!(document.getElementById("chkGameCeil")||{}).checked;
+
+    const czSucc01 = (()=>{
+      const el = document.getElementById("czSuccessPct") || document.getElementById("czSuccess") || document.getElementById("czSuccPct") || document.getElementById("czSucc");
+      if(!el) return null;
+      const s = String(el.value ?? "").trim();
+      if(!s) return null;
+      const p = parsePercent(s);
+      if(p==null) return null;
+      return Math.max(0, Math.min(1, p));
+    })();
+    const fail = (czSucc01==null) ? null : (1 - czSucc01);
+
+    const nowG = Math.max(0, Math.floor(+((document.getElementById("nowG")||{}).value) || 0));
+    const ceilG = Math.max(0, Math.floor(+((document.getElementById("ceilG")||{}).value) || 0));
+    const ceilTy = (()=>{
+      const el = document.getElementById("ceilTy") || document.getElementById("tenjoTy") || document.getElementById("tyCeil");
+      if(!el) return null;
+      const v = +el.value;
+      return isFinite(v) ? Math.max(0, v) : null;
+    })();
+
+    function calcTotalsOnce(){
+      let totalEV=0, totalInvest=0, totalHitProb=0, totalAvgHitCycle=0, totalGames=0, totalGamesAll=0, totalPt=0;
+
+      for(const mode of Object.keys(init)){
+        const initP = init[mode] || 0;
+        if(initP<=0) continue;
+
+        const cycleP = ensureCyclePSumsToOne(buildCyclePMap(cycleDist[mode] || cycleDist['共通'] || []), maxCycle);
+        const cyclePShort = cycleShortDist ? ensureCyclePSumsToOne(buildCyclePMap((cycleShortDist[mode] || cycleShortDist['共通'] || [])), maxCycle) : null;
+
+        const r = calcForMode({
+          startCycle, startPt, mode, cycleP, cyclePShort, maxCycle,
+          pt1Profile:pt1, pt2pProfile:pt2p, ptPerG, coinPerG, ty, directDenom,
+          preType, preG, prePtMin, prePtMax, prePtPick, prePtCustom,
+          shortThPt, ptShortProfile: ptShort, junzo, betPerG
+        });
+
+        totalEV += initP * r.ev;
+        totalInvest += initP * r.invest;
+        totalHitProb += initP * r.hitProb;
+        totalAvgHitCycle += initP * r.avgHitCycle;
+        totalGames += initP * r.expGames;
+        totalGamesAll += initP * (r.expGamesAll||r.expGames||0);
+        totalPt += initP * r.expPt;
+      }
+      return {totalEV, totalInvest, totalHitProb, totalAvgHitCycle, totalGames, totalGamesAll, totalPt};
+    }
+
+    // まずは従来（周期天井狙いのエンジン結果）
+    let {totalEV, totalInvest, totalHitProb, totalAvgHitCycle, totalGames, totalGamesAll, totalPt} = calcTotalsOnce();
+    let expCollectCoins = totalHitProb * ty;
+
+    // ---- ゲーム数天井狙い：周期天井狙いをベースに「天井到達までのCZ非突破率」で重み付け ----
+    // 期待値・ゲーム数に fail^K を掛ける（failを掛けていくのと同値）。
+    // 天井到達時は「初当たりTYを足さずに天井TYを足す」→ 差分方式で (ceilTy - ty) を加算して重複排除。
+    if(tenjoMode==="game" && useGameCeil && fail!=null && isFinite(fail)){
+      // 内部推定：1回のCZ（=当たり機会）までの平均G（打ち出し状態で計算）
+      const avgGperAttempt0 = (totalHitProb>0) ? (totalGamesAll / totalHitProb) : 0;
+      const denom = (avgGperAttempt0>0) ? avgGperAttempt0 : 250; // フォールバック
+      const remainG = Math.max(0, ceilG - nowG);
+      const K = Math.max(0, Math.ceil(remainG / denom));
+
+      // UIに反映（存在する場合のみ）
+      const kEl=document.getElementById("ceilK");
+      if(kEl){ kEl.value = String(K); }
+
+      // ---- ユーザー指定の近似：
+      // 「周期天井狙い（=周期DPエンジン）のスルー別期待値」を基準に、
+      // k回失敗到達確率 = fail^k で重み付けして合成する。
+      // （成功/非当選の分岐は周期EV側に内包されている前提の、実戦寄り近似）
+      //
+      // 重要：
+      // - 0スルー(打ち出し)の周期EVは「通常の周期天井狙い」側で表示しているので、
+      //   ゲーム数天井狙い側では 1スルー以降の加重分 + 天井到達分を足す。
+      // - スルー増加に伴うモード移行は、現時点の init 分布に modeTrans を追加適用して表現する。
+      //
+      function calcTotalsAt(sc, sp, extraThrough){
+        let totalEV=0, totalInvest=0, totalHitProb=0, totalAvgHitCycle=0, totalGames=0, totalGamesAll=0, totalPt=0;
+
+        // 追加スルー分だけ初期モード分布を遷移させる（存在する場合のみ）
+        let initK = init;
+        if(modeTrans && extraThrough>0){
+          initK = applyModeTrans(initK, modeTrans, extraThrough);
+        }
+
+        for(const mode of Object.keys(initK)){
+          const initP = initK[mode] || 0;
+          if(initP<=0) continue;
+
+          const cycleP = ensureCyclePSumsToOne(buildCyclePMap(cycleDist[mode] || cycleDist['共通'] || []), maxCycle);
+          const cyclePShort = cycleShortDist ? ensureCyclePSumsToOne(buildCyclePMap((cycleShortDist[mode] || cycleShortDist['共通'] || [])), maxCycle) : null;
+
+          const r = calcForMode({
+            startCycle: sc, startPt: sp, mode, cycleP, cyclePShort, maxCycle,
+            pt1Profile:pt1, pt2pProfile:pt2p, ptPerG, coinPerG, ty, directDenom,
+            preType, preG, prePtMin, prePtMax, prePtPick, prePtCustom,
+            shortThPt, ptShortProfile: ptShort, junzo, betPerG
+          });
+
+          totalEV += initP * r.ev;
+          totalInvest += initP * r.invest;
+          totalHitProb += initP * r.hitProb;
+          totalAvgHitCycle += initP * r.avgHitCycle;
+          totalGames += initP * r.expGames;
+          totalGamesAll += initP * (r.expGamesAll||r.expGames||0);
+          totalPt += initP * r.expPt;
+        }
+        return {totalEV, totalInvest, totalHitProb, totalAvgHitCycle, totalGames, totalGamesAll, totalPt};
+      }
+
+      // 期待値・投資・回転数を fail^k で重み付け合成（k=1..K-1）
+      let evAdd=0, invAdd=0, gAdd=0, gAllAdd=0, ptAdd=0, collectAdd=0;
+
+      for(let k=1;k<Math.max(1,K);k++){
+        const w = Math.pow(fail, k);
+        const sc = Math.min(maxCycle, Math.max(1, startCycle + k)); // 平均的に周期が進む近似
+        const sp = 0; // 失敗後は次周期頭扱い
+        const t = calcTotalsAt(sc, sp, k);
+
+        evAdd      += w * t.totalEV;
+        invAdd     += w * t.totalInvest;
+        gAdd       += w * t.totalGames;
+        gAllAdd    += w * t.totalGamesAll;
+        ptAdd      += w * t.totalPt;
+        collectAdd += w * (t.totalHitProb * ty);
+      }
+
+      // 天井到達（排他）：fail^K で天井TYを加算（通常TYは足さない）
+      const pCeil = Math.pow(fail, K);
+      if(ceilTy!=null && ceilTy>0 && isFinite(ceilTy)){
+        evAdd += pCeil * ceilTy;
+        collectAdd += pCeil * ceilTy;
+      }
+
+      // 天井前兆（後前兆）は「天井到達ルート」のみ加算
+      const ceilPreType = (document.getElementById("ceilPreType")||{}).value || "pre";
+      const ceilPreG = Math.max(0, +(document.getElementById("ceilPreG")||{}).value || 0);
+      if(ceilPreType==="post" && ceilPreG>0){
+        gAdd    += pCeil * ceilPreG;
+        gAllAdd += pCeil * ceilPreG;
+        invAdd  += pCeil * ceilPreG * coinPerG;
+      }
+
+      // 周期天井狙い（通常計算）に対して、ゲーム数天井分の「加重上乗せ」を加算
+      totalEV += evAdd;
+      totalInvest += invAdd;
+      totalGames += gAdd;
+      totalGamesAll += gAllAdd;
+      totalPt += ptAdd;
+      expCollectCoins += collectAdd;
+      // 当選確率/平均当選周期は通常計算のまま
+    }
+// ===== [ADD] G数天井狙い（cycle/game切替 + weighted排他）ここまで =====
+
+
 
     const machine = (totalGamesAll>0) ? (1 + (totalEV/totalGamesAll)/3.0) : 0;
 
-    const expCollectCoins = totalHitProb * ty; // 期待回収枚数（枚）
     const yenObj = (!ne.isEquiv)
       ? calcYenNonEquiv(totalInvest, expCollectCoins, ne.holdCoins, ne.lendCoinsPer1k, ne.exchCoinsPer1k)
       : {investYen: null, collectYen: null, evYen: null};
@@ -1830,6 +2290,21 @@ return {ok:true, ev: totalEV, invest: totalInvest, hitProb: totalHitProb, avgHit
 
   
   
+
+// ===== 天井狙いモードUI切替 =====
+function updateTenjoModeUI(){
+  const mode = (document.querySelector('input[name="tenjoMode"]:checked')||{}).value || "cycle";
+  const pane = document.getElementById("paneGameCeil");
+  if(pane) pane.style.display = (mode==="game") ? "block" : "none";
+}
+document.querySelectorAll('input[name="tenjoMode"]').forEach(el=>{
+  el.addEventListener("change", ()=>{
+    updateTenjoModeUI();
+  });
+});
+updateTenjoModeUI();
+// ===== /天井狙いモードUI切替 =====
+
 document.getElementById("btnCalc").addEventListener("click", (e)=>{
     e.preventDefault();
     try{
